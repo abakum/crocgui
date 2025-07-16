@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -43,9 +44,61 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	boxholder := container.NewVBox()
 	senderScroller := container.NewVScroll(boxholder)
 	fileentries := make(map[string]*fyne.Container)
+	w.SetOnDropped(func(pos fyne.Position, uris []fyne.URI) {
+		if len(uris) == 0 {
+			return
+		}
+		for _, uri := range uris {
+			nfile := uri.Path()
+			fpath := filepath.Join(sendDir, filepath.Base(nfile))
+
+			_, err := os.Stat(fpath)
+			if err == nil {
+				log.Tracef("URI (%s), already in internal cache %s", nfile, fpath)
+				// fmt.Printf("URI (%s), already in internal cache %s\n", nfile, fpath)
+				continue
+			}
+
+			err = CopyFile(nfile, fpath)
+			if err != nil {
+				log.Errorf("Unable to copy file, error: %s - %s\n", sendDir, err.Error())
+				// fmt.Errorf("Unable to copy file, error: %s - %s\n", sendDir, err.Error())
+				continue
+			}
+			log.Tracef("URI (%s), copied to internal cache %s", nfile, fpath)
+			// fmt.Printf("URI (%s), copied to internal cache %s\n", nfile, fpath)
+
+			_, sterr := os.Stat(fpath)
+			if sterr != nil {
+				log.Errorf("Stat error: %s - %s\n", fpath, sterr.Error())
+				return
+			}
+
+			labelFile := widget.NewLabel(filepath.Base(nfile))
+			newentry := container.NewHBox(
+				labelFile,
+				layout.NewSpacer(),
+				widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
+					if !sendEntry.Disabled() {
+						if fe, ok := fileentries[fpath]; ok {
+							boxholder.Remove(fe)
+							os.Remove(fpath)
+							log.Tracef("Removed file from internal cache: %s", fpath)
+							// fmt.Printf("Removed file from internal cache: %s\n", fpath)
+							delete(fileentries, fpath)
+						}
+					}
+				}),
+			)
+			fileentries[fpath] = newentry
+			boxholder.Add(newentry)
+		}
+		SelectIndex(w, 3)
+		SelectIndex(w, 0)
+	})
 
 	addFileButton := widget.NewButtonWithIcon("", theme.FileIcon(), func() {
-		dialog.ShowFileOpen(func(f fyne.URIReadCloser, e error) {
+		ShowFileOpen(func(f fyne.URIReadCloser, e error) {
 			if e != nil {
 				log.Errorf("Open dialog error: %s", e.Error())
 				return
@@ -241,4 +294,46 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 
 	return container.NewTabItemWithIcon(lp("Send"), theme.MailSendIcon(),
 		container.NewBorder(sendTop, sendBot, nil, nil, senderScroller))
+}
+
+// Big File Dialog
+func ShowFileOpen(callback func(reader fyne.URIReadCloser, err error), parent fyne.Window) {
+	switch runtime.GOOS {
+	case "ios", "android":
+		dialog.ShowFileOpen(callback, parent)
+		return
+	}
+	fd := dialog.NewFileOpen(callback, parent)
+	fd.Resize(parent.Canvas().Size())
+	fd.Show()
+}
+
+func CopyFile(src, dst string) error {
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+
+	_, err = io.Copy(destination, source)
+	return err
+}
+
+// Dirty refresh
+func SelectIndex(window fyne.Window, index int) {
+	content := window.Content()
+	if cont, ok := content.(*fyne.Container); ok {
+		for _, obj := range cont.Objects {
+			if at, ok := obj.(*container.AppTabs); ok {
+				at.SelectIndex(index)
+				return
+			}
+		}
+	}
 }
