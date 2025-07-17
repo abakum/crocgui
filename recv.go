@@ -39,6 +39,7 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			}
 		}, w)
 		savedialog.SetFileName("crocdebuglog.txt")
+		savedialog.Resize(w.Canvas().Size())
 		savedialog.Show()
 	}))
 	debugObjects = append(debugObjects, debugBox)
@@ -83,34 +84,46 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 				prog.Show()
 				donechan := make(chan bool)
 				var filename string
-				receivednames := make(map[string]int)
-				go func() {
-					ticker := time.NewTicker(time.Millisecond * 100)
-					for {
-						select {
-						case <-ticker.C:
-							if receiver.Step2FileInfoTransferred {
-								cnum := receiver.FilesToTransferCurrentNum
-								fi := receiver.FilesToTransfer[cnum]
-								filename = filepath.Base(fi.Name)
-								receivednames[filename] = cnum
-								topline.SetText(fmt.Sprintf("%s: %s (%d/%d)", lp("Receiving file"), filename, cnum+1, len(receiver.FilesToTransfer)))
-								prog.Max = float64(fi.Size)
-								prog.SetValue(float64(receiver.TotalSent))
-							}
-						case <-donechan:
-							ticker.Stop()
-							return
+				receivednames := make(map[string]int, 100)
+				fileInfo := func() {
+					if receiver.Step2FileInfoTransferred ||
+						receiver.Step3RecipientRequestFile ||
+						receiver.Step4FileTransferred ||
+						receiver.Step5CloseChannels ||
+						receiver.SuccessfulTransfer {
+						cnum := receiver.FilesToTransferCurrentNum
+						if len(receiver.FilesToTransfer) > cnum {
+							fi := receiver.FilesToTransfer[cnum]
+							filename = filepath.Base(fi.Name)
+
+							receivednames[filename] = cnum
+							toplineText := fmt.Sprintf("%s: %s (%d/%d)", lp("Receiving file"), filename, cnum+1, len(receiver.FilesToTransfer))
+							log.Tracef(toplineText)
+							topline.SetText(toplineText)
+							prog.Max = float64(fi.Size)
+							prog.SetValue(float64(receiver.TotalSent))
 						}
 					}
-				}()
+				}
 				cderr := os.Chdir(recvDir)
 				if cderr != nil {
 					log.Error("Unable to change to dir:", recvDir, cderr)
 				}
 				status.SetText("")
-				rerr := receiver.Receive()
-				donechan <- true
+				var rerr error
+				go func() {
+					rerr = receiver.Receive()
+					donechan <- true
+				}()
+				for !receiver.SuccessfulTransfer {
+					select {
+					case <-donechan:
+						break
+					case <-time.After(100 * time.Millisecond):
+						fileInfo()
+					}
+				}
+				fileInfo()
 				prog.Hide()
 				prog.SetValue(0)
 				topline.SetText(lp("Enter code to download"))
@@ -126,8 +139,9 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 					sort.Slice(filesReceived, func(i, j int) bool {
 						return receivednames[filesReceived[i]] < receivednames[filesReceived[j]]
 					})
-
-					status.SetText(fmt.Sprintf("%s: %s", lp("Received"), strings.Join(filesReceived, ",")))
+					statusText := fmt.Sprintf("%s: %s", lp("Received"), strings.Join(filesReceived, ","))
+					status.SetText(statusText)
+					log.Tracef(statusText)
 					filepath.Walk(recvDir, func(path string, info fs.FileInfo, err error) error {
 						if err != nil {
 							return err
@@ -138,6 +152,11 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 									os.Remove(path)
 									log.Tracef("remove internal cache file %s", path)
 								}(path)
+								if f == nil {
+									// On Cancel File Save Dialog
+									log.Tracef("cancel save (%s)", path)
+									return
+								}
 								var ofile io.WriteCloser
 								var oerr error
 								ofile = f
@@ -160,6 +179,7 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 								log.Tracef("saved (%s) to user path %s", path, f.URI().String())
 							}, w)
 							savedialog.SetFileName(filepath.Base(path))
+							savedialog.Resize(w.Canvas().Size())
 							savedialog.Show()
 						}
 						return nil

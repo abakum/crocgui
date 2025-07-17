@@ -55,18 +55,15 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			_, err := os.Stat(fpath)
 			if err == nil {
 				log.Tracef("URI (%s), already in internal cache %s", nfile, fpath)
-				// fmt.Printf("URI (%s), already in internal cache %s\n", nfile, fpath)
 				continue
 			}
 
 			err = CopyFile(nfile, fpath)
 			if err != nil {
 				log.Errorf("Unable to copy file, error: %s - %s\n", sendDir, err.Error())
-				// fmt.Errorf("Unable to copy file, error: %s - %s\n", sendDir, err.Error())
 				continue
 			}
 			log.Tracef("URI (%s), copied to internal cache %s", nfile, fpath)
-			// fmt.Printf("URI (%s), copied to internal cache %s\n", nfile, fpath)
 
 			_, sterr := os.Stat(fpath)
 			if sterr != nil {
@@ -84,7 +81,6 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 							boxholder.Remove(fe)
 							os.Remove(fpath)
 							log.Tracef("Removed file from internal cache: %s", fpath)
-							// fmt.Printf("Removed file from internal cache: %s\n", fpath)
 							delete(fileentries, fpath)
 						}
 					}
@@ -145,6 +141,7 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			}
 		}, w)
 		savedialog.SetFileName("crocdebuglog.txt")
+		savedialog.Resize(w.Canvas().Size())
 		savedialog.Show()
 	}))
 	debugObjects = append(debugObjects, debugBox)
