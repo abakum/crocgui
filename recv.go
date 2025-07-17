@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	log "github.com/schollz/logger"
@@ -134,9 +133,11 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 							return err
 						}
 						if !info.IsDir() {
-							var diagwg sync.WaitGroup
-							diagwg.Add(1)
 							savedialog := dialog.NewFileSave(func(f fyne.URIWriteCloser, e error) {
+								defer func(path string) {
+									os.Remove(path)
+									log.Tracef("remove internal cache file %s", path)
+								}(path)
 								var ofile io.WriteCloser
 								var oerr error
 								ofile = f
@@ -157,23 +158,13 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 								ifile.Close()
 								ofile.Close()
 								log.Tracef("saved (%s) to user path %s", path, f.URI().String())
-								diagwg.Done()
 							}, w)
 							savedialog.SetFileName(filepath.Base(path))
 							savedialog.Show()
-							diagwg.Wait()
 						}
 						return nil
 					})
 				}
-				// Clear recv dir after finished
-				filepath.Walk(recvDir, func(path string, info fs.FileInfo, err error) error {
-					if !info.IsDir() {
-						os.Remove(path)
-						log.Tracef("remove internal cache file %s", path)
-					}
-					return nil
-				})
 			}),
 			prog,
 			status,
