@@ -35,7 +35,7 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	sendEntry := widget.NewEntry()
 	sendEntry.SetText(randomCode)
 	copyCodeButton := widget.NewButtonWithIcon("", theme.ContentCopyIcon(), func() {
-		w.Clipboard().SetContent(sendEntry.Text)
+		a.Clipboard().SetContent(sendEntry.Text)
 	})
 	copyCodeButton.Hide()
 
@@ -233,9 +233,11 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 						fi := sender.FilesToTransfer[cnum]
 						filename = filepath.Base(fi.Name)
 						sendnames[filename] = cnum
-						topline.SetText(fmt.Sprintf("%s: (%d/%d)", lp("Sending file"), filename, cnum+1, len(sender.FilesToTransfer)))
-						prog.Max = float64(fi.Size)
-						prog.SetValue(float64(sender.TotalSent))
+						fyne.Do(func() {
+							topline.SetText(fmt.Sprintf("%s: (%d/%d)", lp("Sending file"), filename, cnum+1, len(sender.FilesToTransfer)))
+							prog.Max = float64(fi.Size)
+							prog.SetValue(float64(sender.TotalSent))
+						})
 					}
 				case <-donechan:
 					ticker.Stop()
@@ -258,17 +260,21 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			if serr != nil {
 				log.Errorf("Send failed: %s\n", serr)
 			} else {
-				status.SetText(fmt.Sprintf("%s %s", lp("Sent file"), filename))
+				fyne.Do(func() {
+					status.SetText(fmt.Sprintf("%s %s", lp("Sent file"), filename))
+				})
 			}
-			resetSender()
+			fyne.Do(resetSender)
 		}()
 		go func() {
 			select {
 			case <-cancelchan:
 				donechan <- true
-				status.SetText(lp("Send cancelled."))
+				fyne.Do(func() {
+					status.SetText(lp("Send cancelled."))
+				})
 			}
-			resetSender()
+			fyne.Do(resetSender)
 		}()
 	})
 
