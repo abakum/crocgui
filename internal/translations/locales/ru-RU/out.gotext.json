@@ -1,0 +1,200 @@
+{
+    "language": "ru-RU",
+    "messages": [
+        {
+            "id": "License Info",
+            "message": "License Info",
+            "translation": "Лицензионная информация"
+        },
+        {
+            "id": "About",
+            "message": "About",
+            "translation": "О программе"
+        },
+        {
+            "id": "Debug log:",
+            "message": "Debug log:",
+            "translation": "Журнал отладки:"
+        },
+        {
+            "id": "Enter code to download",
+            "message": "Enter code to download",
+            "translation": "Введите код для загрузки"
+        },
+        {
+            "id": "Receive",
+            "message": "Receive",
+            "translation": "Получить"
+        },
+        {
+            "id": "Receive Code",
+            "message": "Receive Code",
+            "translation": "Код получения"
+        },
+        {
+            "id": "Download",
+            "message": "Download",
+            "translation": "Скачать"
+        },
+        {
+            "id": "Receiving file",
+            "message": "Receiving file",
+            "translation": "Получение файла"
+        },
+        {
+            "id": "Received",
+            "message": "Received",
+            "translation": "Получено"
+        },
+        {
+            "id": "Pick a file to send",
+            "message": "Pick a file to send",
+            "translation": "Выберите файл для отправки"
+        },
+        {
+            "id": "Send",
+            "message": "Send",
+            "translation": "Отправить"
+        },
+        {
+            "id": "Sending file",
+            "message": "Sending file",
+            "translation": "Отправка файла"
+        },
+        {
+            "id": "Sent file",
+            "message": "Sent file",
+            "translation": "Файл отправлен"
+        },
+        {
+            "id": "Send cancelled.",
+            "message": "Send cancelled.",
+            "translation": "Отправка отменена."
+        },
+        {
+            "id": "Cancel",
+            "message": "Cancel",
+            "translation": "Отмена"
+        },
+        {
+            "id": "Send Code",
+            "message": "Send Code",
+            "translation": "Код отправки"
+        },
+        {
+            "id": "Enable Debug Log",
+            "message": "Enable Debug Log",
+            "translation": "Включить журнал отладки"
+        },
+        {
+            "id": "Show / Hide",
+            "message": "Show / Hide",
+            "translation": ""
+        },
+        {
+            "id": "Settings",
+            "message": "Settings",
+            "translation": "Настройки"
+        },
+        {
+            "id": "Appearance",
+            "message": "Appearance",
+            "translation": "Внешний вид"
+        },
+        {
+            "id": "Language",
+            "message": "Language",
+            "translation": "Язык"
+        },
+        {
+            "id": "Theme",
+            "message": "Theme",
+            "translation": "Тема"
+        },
+        {
+            "id": "Font",
+            "message": "Font",
+            "translation": "Шрифт"
+        },
+        {
+            "id": "Logo",
+            "message": "Logo",
+            "translation": ""
+        },
+        {
+            "id": "Relay",
+            "message": "Relay",
+            "translation": "Ретранслятор"
+        },
+        {
+            "id": "Address",
+            "message": "Address",
+            "translation": "Адрес"
+        },
+        {
+            "id": "Ports",
+            "message": "Ports",
+            "translation": "Порты"
+        },
+        {
+            "id": "Password",
+            "message": "Password",
+            "translation": "Пароль"
+        },
+        {
+            "id": "Network Local",
+            "message": "Network Local",
+            "translation": "Локальная сеть"
+        },
+        {
+            "id": "Disable Local",
+            "message": "Disable Local",
+            "translation": "Отключить локальный режим"
+        },
+        {
+            "id": "Force Local Only",
+            "message": "Force Local Only",
+            "translation": "Только локальная сеть"
+        },
+        {
+            "id": "Multicast Address",
+            "message": "Multicast Address",
+            "translation": ""
+        },
+        {
+            "id": "Transfer Options",
+            "message": "Transfer Options",
+            "translation": "Параметры передачи"
+        },
+        {
+            "id": "PAKE Curve",
+            "message": "PAKE Curve",
+            "translation": "Кривая PAKE"
+        },
+        {
+            "id": "Hash Algorithm",
+            "message": "Hash Algorithm",
+            "translation": "Хеш-алгоритм"
+        },
+        {
+            "id": "Disable Multiplexing",
+            "message": "Disable Multiplexing",
+            "translation": "Отключить мультиплексирование"
+        },
+        {
+            "id": "Disable Compression",
+            "message": "Disable Compression",
+            "translation": "Отключить сжатие"
+        },
+        {
+            "id": "Upload Speed Throttle",
+            "message": "Upload Speed Throttle",
+            "translation": "Ограничение скорости отправки"
+        },
+        {
+            "id": "Debug",
+            "message": "Debug",
+            "translation": "Отладка"
+        }
+    ]
+}

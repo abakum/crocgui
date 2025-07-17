@@ -29,6 +29,7 @@ func init() {
 	dict := map[string]catalog.Dictionary{
 		"en_US": &dictionary{index: en_USIndex, data: en_USData},
 		"ja_JP": &dictionary{index: ja_JPIndex, data: ja_JPData},
+		"ru_RU": &dictionary{index: ru_RUIndex, data: ru_RUData},
 		"tr_TR": &dictionary{index: tr_TRIndex, data: tr_TRData},
 		"zh_CN": &dictionary{index: zh_CNIndex, data: zh_CNData},
 		"zh_HK": &dictionary{index: zh_HKIndex, data: zh_HKData},
@@ -133,6 +134,32 @@ const ja_JPData string = "" + // Size: 730 bytes
 	"ーカルネットワークのみ使用する\x02転送オプション\x02PAKE Curve\x02ハッシュ方式\x02多重化を無効にする\x02圧縮を" +
 	"無効化\x02アップロード速度の制限\x02デバッグ"
 
+var ru_RUIndex = []uint32{ // 40 elements
+	// Entry 0 - 1F
+	0x00000000, 0x0000002e, 0x00000044, 0x00000061,
+	0x0000008f, 0x000000a0, 0x000000ba, 0x000000c9,
+	0x000000e7, 0x000000f8, 0x0000012a, 0x0000013d,
+	0x00000159, 0x00000175, 0x00000198, 0x000001a5,
+	0x000001bd, 0x000001ea, 0x000001ea, 0x000001fd,
+	0x00000213, 0x0000021c, 0x00000225, 0x00000230,
+	0x00000230, 0x00000249, 0x00000254, 0x0000025f,
+	0x0000026c, 0x00000288, 0x000002b9, 0x000002e2,
+	// Entry 20 - 3F
+	0x000002e2, 0x00000306, 0x00000318, 0x00000330,
+	0x0000036a, 0x0000038a, 0x000003c3, 0x000003d2,
+} // Size: 184 bytes
+
+const ru_RUData string = "" + // Size: 978 bytes
+	"\x02Лицензионная информация\x02О программе\x02Журнал отладки:\x02Введите" +
+	" код для загрузки\x02Получить\x02Код получения\x02Скачать\x02Получение ф" +
+	"айла\x02Получено\x02Выберите файл для отправки\x02Отправить\x02Отправка" +
+	" файла\x02Файл отправлен\x02Отправка отменена.\x02Отмена\x02Код отправки" +
+	"\x02Включить журнал отладки\x02Настройки\x02Внешний вид\x02Язык\x02Тема" +
+	"\x02Шрифт\x02Ретранслятор\x02Адрес\x02Порты\x02Пароль\x02Локальная сеть" +
+	"\x02Отключить локальный режим\x02Только локальная сеть\x02Параметры пере" +
+	"дачи\x02Кривая PAKE\x02Хеш-алгоритм\x02Отключить мультиплексирование" +
+	"\x02Отключить сжатие\x02Ограничение скорости отправки\x02Отладка"
+
 var tr_TRIndex = []uint32{ // 40 elements
 	// Entry 0 - 1F
 	0x00000000, 0x00000007, 0x00000011, 0x0000002c,
@@ -222,4 +249,4 @@ const zh_TWData string = "" + // Size: 432 bytes
 	"設定\x02外觀\x02語言\x02主題\x02字體\x02中繼\x02地址\x02連接埠\x02密碼\x02本地網路\x02停用本地" +
 	"\x02強制僅限本地\x02傳輸選項\x02PAKE 曲線\x02哈希演算法\x02停用多重化\x02停用壓縮\x02上傳速度調節\x02除錯"
 
-	// Total table size 4156 bytes (4KiB); checksum: 6ED05A02
+	// Total table size 5318 bytes (5KiB); checksum: FAE28C2A
