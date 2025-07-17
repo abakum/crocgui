@@ -89,7 +89,6 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			fileentries[fpath] = newentry
 			boxholder.Add(newentry)
 		}
-		SelectIndex(w, 3)
 		SelectIndex(w, 0)
 	})
 
@@ -261,7 +260,7 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 				log.Errorf("Send failed: %s\n", serr)
 			} else {
 				fyne.Do(func() {
-					status.SetText(fmt.Sprintf("%s %s", lp("Sent file"), filename))
+					status.SetText(fmt.Sprintf("%s: %s", lp("Sent file"), filename))
 				})
 			}
 			fyne.Do(resetSender)
@@ -330,13 +329,22 @@ func CopyFile(src, dst string) error {
 
 // Dirty refresh
 func SelectIndex(window fyne.Window, index int) {
-	content := window.Content()
-	if cont, ok := content.(*fyne.Container); ok {
-		for _, obj := range cont.Objects {
-			if at, ok := obj.(*container.AppTabs); ok {
-				at.SelectIndex(index)
-				return
+	var findTabs func(fyne.CanvasObject) *container.AppTabs
+	findTabs = func(obj fyne.CanvasObject) *container.AppTabs {
+		switch v := obj.(type) {
+		case *container.AppTabs:
+			return v
+		case *fyne.Container:
+			for _, child := range v.Objects {
+				if tabs := findTabs(child); tabs != nil {
+					return tabs
+				}
 			}
 		}
+		return nil
+	}
+	if tabs := findTabs(window.Content()); tabs != nil {
+		tabs.SelectIndex(index)
+		tabs.Refresh()
 	}
 }

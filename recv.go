@@ -139,7 +139,7 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 					sort.Slice(filesReceived, func(i, j int) bool {
 						return receivednames[filesReceived[i]] < receivednames[filesReceived[j]]
 					})
-					statusText := fmt.Sprintf("%s: %s", lp("Received"), strings.Join(filesReceived, ","))
+					statusText := fmt.Sprintf("%s:\n%s", lp("Received"), strings.Join(filesReceived, "\n"))
 					status.SetText(statusText)
 					log.Tracef(statusText)
 					filepath.Walk(recvDir, func(path string, info fs.FileInfo, err error) error {
