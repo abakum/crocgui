@@ -1,10 +1,10 @@
 # Binaries
-*.exe
+#*.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-*.apk
+#*.apk
 /bin/
 /gobuild/
 
