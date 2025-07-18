@@ -12,29 +12,39 @@
             "translation": "關於"
         },
         {
-            "id": "Debug log:",
-            "message": "Debug log:",
-            "translation": "除錯記錄:"
-        },
-        {
             "id": "Enter code to download",
             "message": "Enter code to download",
             "translation": "輸入代碼下載"
         },
         {
-            "id": "Receive",
-            "message": "Receive",
-            "translation": "接收"
+            "id": "Debug log:",
+            "message": "Debug log:",
+            "translation": "除錯記錄:"
         },
         {
-            "id": "Receive Code",
-            "message": "Receive Code",
-            "translation": "接收碼"
+            "id": "Export full log",
+            "message": "Export full log",
+            "translation": ""
+        },
+        {
+            "id": "Saved all files to",
+            "message": "Saved all files to",
+            "translation": ""
         },
         {
             "id": "Download",
             "message": "Download",
             "translation": "下載"
+        },
+        {
+            "id": "Save All",
+            "message": "Save All",
+            "translation": ""
+        },
+        {
+            "id": "Receive Code",
+            "message": "Receive Code",
+            "translation": "接收碼"
         },
         {
             "id": "Receiving file",
@@ -45,6 +55,31 @@
             "id": "Received",
             "message": "Received",
             "translation": "已接收"
+        },
+        {
+            "id": "Receive cancelled.",
+            "message": "Receive cancelled.",
+            "translation": ""
+        },
+        {
+            "id": "Cancel",
+            "message": "Cancel",
+            "translation": "取消"
+        },
+        {
+            "id": "Delete All",
+            "message": "Delete All",
+            "translation": ""
+        },
+        {
+            "id": "Are you sure you want to delete all received files?",
+            "message": "Are you sure you want to delete all received files?",
+            "translation": ""
+        },
+        {
+            "id": "Receive",
+            "message": "Receive",
+            "translation": "接收"
         },
         {
             "id": "Pick a file to send",
@@ -72,11 +107,6 @@
             "translation": "發送已取消。"
         },
         {
-            "id": "Cancel",
-            "message": "Cancel",
-            "translation": "取消"
-        },
-        {
             "id": "Send Code",
             "message": "Send Code",
             "translation": "發送代碼"
@@ -89,7 +119,7 @@
         {
             "id": "Show / Hide",
             "message": "Show / Hide",
-            "translation": ""
+            "translation": "顯示 / 隱藏"
         },
         {
             "id": "Settings",
@@ -119,7 +149,7 @@
         {
             "id": "Logo",
             "message": "Logo",
-            "translation": ""
+            "translation": "標誌"
         },
         {
             "id": "Relay",
@@ -159,7 +189,7 @@
         {
             "id": "Multicast Address",
             "message": "Multicast Address",
-            "translation": ""
+            "translation": "群播位址"
         },
         {
             "id": "Transfer Options",

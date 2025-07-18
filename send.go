@@ -132,17 +132,19 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		}, w)
 	})
 
-	debugBox := container.NewHBox(widget.NewLabel(lp("Debug log:")), layout.NewSpacer(), widget.NewButton("Export full log", func() {
-		savedialog := dialog.NewFileSave(func(f fyne.URIWriteCloser, e error) {
-			if f != nil {
-				logoutput.buf.WriteTo(f)
-				f.Close()
-			}
-		}, w)
-		savedialog.SetFileName("crocdebuglog.txt")
-		savedialog.Resize(w.Canvas().Size())
-		savedialog.Show()
-	}))
+	debugBox := container.NewHBox(widget.NewLabel(lp("Debug log:")),
+		layout.NewSpacer(),
+		widget.NewButtonWithIcon(lp("Export full log"), theme.DocumentSaveIcon(), func() {
+			savedialog := dialog.NewFileSave(func(f fyne.URIWriteCloser, e error) {
+				if f != nil {
+					logoutput.buf.WriteTo(f)
+					f.Close()
+				}
+			}, w)
+			savedialog.SetFileName("crocdebuglog.txt")
+			savedialog.Resize(w.Canvas().Size())
+			savedialog.Show()
+		}))
 	debugObjects = append(debugObjects, debugBox)
 
 	cancelchan := make(chan bool)
@@ -175,6 +177,16 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	}
 
 	sendButton = widget.NewButtonWithIcon(lp("Send"), theme.MailSendIcon(), func() {
+		if len(sendEntry.Text) < 6 {
+			log.Error("no receive code entered")
+			dialog.ShowInformation(
+				lp("Send"),
+				lp("Enter code to download"),
+				w,
+			)
+			return
+		}
+
 		// Only send if files selected
 		if len(fileentries) < 1 {
 			log.Error("no files selected")
@@ -271,13 +283,11 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			fyne.Do(resetSender)
 		}()
 		go func() {
-			select {
-			case <-cancelchan:
-				donechan <- true
-				fyne.Do(func() {
-					status.SetText(lp("Send cancelled."))
-				})
-			}
+			<-cancelchan
+			donechan <- true
+			fyne.Do(func() {
+				status.SetText(lp("Send cancelled."))
+			})
 			fyne.Do(resetSender)
 		}()
 	})

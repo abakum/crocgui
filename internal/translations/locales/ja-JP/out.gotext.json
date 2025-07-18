@@ -12,29 +12,39 @@
             "translation": "情報"
         },
         {
-            "id": "Debug log:",
-            "message": "Debug log:",
-            "translation": "デバッグログ:"
-        },
-        {
             "id": "Enter code to download",
             "message": "Enter code to download",
             "translation": "コードを入力してダウンロード"
         },
         {
-            "id": "Receive",
-            "message": "Receive",
-            "translation": "受信"
+            "id": "Debug log:",
+            "message": "Debug log:",
+            "translation": "デバッグログ:"
         },
         {
-            "id": "Receive Code",
-            "message": "Receive Code",
-            "translation": "受信コード"
+            "id": "Export full log",
+            "message": "Export full log",
+            "translation": ""
+        },
+        {
+            "id": "Saved all files to",
+            "message": "Saved all files to",
+            "translation": ""
         },
         {
             "id": "Download",
             "message": "Download",
             "translation": "ダウンロード"
+        },
+        {
+            "id": "Save All",
+            "message": "Save All",
+            "translation": ""
+        },
+        {
+            "id": "Receive Code",
+            "message": "Receive Code",
+            "translation": "受信コード"
         },
         {
             "id": "Receiving file",
@@ -45,6 +55,31 @@
             "id": "Received",
             "message": "Received",
             "translation": "受信しました"
+        },
+        {
+            "id": "Receive cancelled.",
+            "message": "Receive cancelled.",
+            "translation": ""
+        },
+        {
+            "id": "Cancel",
+            "message": "Cancel",
+            "translation": "キャンセル"
+        },
+        {
+            "id": "Delete All",
+            "message": "Delete All",
+            "translation": ""
+        },
+        {
+            "id": "Are you sure you want to delete all received files?",
+            "message": "Are you sure you want to delete all received files?",
+            "translation": ""
+        },
+        {
+            "id": "Receive",
+            "message": "Receive",
+            "translation": "受信"
         },
         {
             "id": "Pick a file to send",
@@ -72,11 +107,6 @@
             "translation": "送信はキャンセルされました"
         },
         {
-            "id": "Cancel",
-            "message": "Cancel",
-            "translation": "キャンセル"
-        },
-        {
             "id": "Send Code",
             "message": "Send Code",
             "translation": "受信コード"
@@ -89,7 +119,7 @@
         {
             "id": "Show / Hide",
             "message": "Show / Hide",
-            "translation": ""
+            "translation": "表示 / 非表示"
         },
         {
             "id": "Settings",
@@ -114,12 +144,12 @@
         {
             "id": "Font",
             "message": "Font",
-            "translation": ""
+            "translation": "フォント"
         },
         {
             "id": "Logo",
             "message": "Logo",
-            "translation": ""
+            "translation": "ロゴ"
         },
         {
             "id": "Relay",
@@ -159,7 +189,7 @@
         {
             "id": "Multicast Address",
             "message": "Multicast Address",
-            "translation": ""
+            "translation": "マルチキャストアドレス"
         },
         {
             "id": "Transfer Options",

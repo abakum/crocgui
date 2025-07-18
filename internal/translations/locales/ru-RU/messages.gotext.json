@@ -2,29 +2,44 @@
     "language": "ru-RU",
     "messages": [
         {
+            "id": "License Info",
+            "message": "License Info",
+            "translation": "Лицензионная информация"
+        },
+        {
+            "id": "About",
+            "message": "About",
+            "translation": "Это"
+        },
+        {
+            "id": "Enter code to download",
+            "message": "Enter code to download",
+            "translation": "Секрет должен быть больше 5 знаков"
+        },
+        {
             "id": "Debug log:",
             "message": "Debug log:",
             "translation": "Журнал отладки:"
         },
         {
-            "id": "Enter code to download",
-            "message": "Enter code to download",
-            "translation": "Заполни"
+            "id": "Export full log",
+            "message": "Export full log",
+            "translation": "Сохранить журнал"
         },
         {
-            "id": "Receive",
-            "message": "Receive",
-            "translation": "Дай"
+            "id": "Download",
+            "message": "Download",
+            "translation": "Беру"
+        },
+        {
+            "id": "Save All",
+            "message": "Save All",
+            "translation": "Сохранить всё"
         },
         {
             "id": "Receive Code",
             "message": "Receive Code",
             "translation": "Секрет"
-        },
-        {
-            "id": "Download",
-            "message": "Download",
-            "translation": "Приём"
         },
         {
             "id": "Receiving file",
@@ -37,34 +52,54 @@
             "translation": "Получил"
         },
         {
+            "id": "Receive cancelled.",
+            "message": "Receive cancelled.",
+            "translation": "Отмена получения."
+        },
+        {
+            "id": "Cancel",
+            "message": "Cancel",
+            "translation": "Отменить"
+        },
+        {
+            "id": "Delete All",
+            "message": "Delete All",
+            "translation": "Удалить всё"
+        },
+        {
+            "id": "Are you sure you want to delete all received files?",
+            "message": "Are you sure you want to delete all received files?",
+            "translation": "Вы уверены что хотите удалить все полученные файлы?"
+        },
+        {
+            "id": "Receive",
+            "message": "Receive",
+            "translation": "Беру"
+        },
+        {
             "id": "Pick a file to send",
             "message": "Pick a file to send",
-            "translation": "Что пошлём"
+            "translation": "Что послать"
         },
         {
             "id": "Send",
             "message": "Send",
-            "translation": "На"
+            "translation": "Шлю"
         },
         {
             "id": "Sending file",
             "message": "Sending file",
-            "translation": "Посылаю"
+            "translation": "Шлю"
         },
         {
             "id": "Sent file",
             "message": "Sent file",
-            "translation": "Послан"
+            "translation": "Послал"
         },
         {
             "id": "Send cancelled.",
             "message": "Send cancelled.",
             "translation": "Отмена посылки."
-        },
-        {
-            "id": "Cancel",
-            "message": "Cancel",
-            "translation": "Отмена"
         },
         {
             "id": "Send Code",
@@ -84,17 +119,17 @@
         {
             "id": "Settings",
             "message": "Settings",
-            "translation": "..."
-        },
-        {
-            "id": "Language",
-            "message": "Language",
-            "translation": "Язык"
+            "translation": "Как"
         },
         {
             "id": "Appearance",
             "message": "Appearance",
             "translation": "Вид"
+        },
+        {
+            "id": "Language",
+            "message": "Language",
+            "translation": "Язык"
         },
         {
             "id": "Theme",
@@ -105,7 +140,8 @@
             "id": "Font",
             "message": "Font",
             "translation": "Шрифт"
-        }, {
+        },
+        {
             "id": "Logo",
             "message": "Logo",
             "translation": "Логотип"
@@ -184,16 +220,6 @@
             "id": "Debug",
             "message": "Debug",
             "translation": "Отладка"
-        },
-        {
-            "id": "About",
-            "message": "About",
-            "translation": "О croc"
-        },
-        {
-            "id": "License Info",
-            "message": "License Info",
-            "translation": "Лицензионная информация"
         }
     ]
 }

@@ -41,17 +41,19 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 
 	var lastSaveDir string
 
-	debugBox := container.NewHBox(widget.NewLabel(lp("Debug log:")), layout.NewSpacer(), widget.NewButton("Export full log", func() {
-		savedialog := dialog.NewFileSave(func(f fyne.URIWriteCloser, e error) {
-			if f != nil {
-				logoutput.buf.WriteTo(f)
-				f.Close()
-			}
-		}, w)
-		savedialog.SetFileName("crocdebuglog.txt")
-		savedialog.Resize(w.Canvas().Size())
-		savedialog.Show()
-	}))
+	debugBox := container.NewHBox(widget.NewLabel(lp("Debug log:")),
+		layout.NewSpacer(),
+		widget.NewButtonWithIcon(lp("Export full log"), theme.DocumentSaveIcon(), func() {
+			savedialog := dialog.NewFileSave(func(f fyne.URIWriteCloser, e error) {
+				if f != nil {
+					logoutput.buf.WriteTo(f)
+					f.Close()
+				}
+			}, w)
+			savedialog.SetFileName("crocdebuglog.txt")
+			savedialog.Resize(w.Canvas().Size())
+			savedialog.Show()
+		}))
 	debugObjects = append(debugObjects, debugBox)
 
 	cancelchan := make(chan bool)
@@ -101,7 +103,7 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 				}
 				fyne.Do(func() {
 					prog.Hide()
-					status.SetText(fmt.Sprintf("Saved all files to: %s", lastSaveDir))
+					status.SetText(fmt.Sprintf("%s: %s", lp("Saved all files to"), lastSaveDir))
 				})
 			}()
 		}, w)
@@ -120,7 +122,7 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	}
 
 	receiveButton = widget.NewButtonWithIcon(lp("Download"), theme.DownloadIcon(), func() {
-		if recvEntry.Text == "" {
+		if len(recvEntry.Text) < 6 {
 			log.Error("no receive code entered")
 			dialog.ShowInformation(
 				lp("Download"),
@@ -245,14 +247,12 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		}()
 
 		go func() {
-			select {
-			case <-cancelchan:
-				receiver.SuccessfulTransfer = true
-				donechan <- true
-				fyne.Do(func() {
-					status.SetText(lp("Receive cancelled."))
-				})
-			}
+			<-cancelchan
+			receiver.SuccessfulTransfer = true
+			donechan <- true
+			fyne.Do(func() {
+				status.SetText(lp("Receive cancelled."))
+			})
 			fyne.Do(resetReceiver)
 		}()
 	})
@@ -264,7 +264,7 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	activeButtonHolder.Add(receiveButton)
 
 	deleteAllButton := widget.NewButtonWithIcon(lp("Delete All"), theme.DeleteIcon(), func() {
-		dialog.ShowConfirm(lp("Delete all files"), lp("Are you sure you want to delete all received files?"), func(b bool) {
+		dialog.ShowConfirm(lp("Delete All"), lp("Are you sure you want to delete all received files?"), func(b bool) {
 			if b {
 				deleteAllFiles()
 			}
@@ -282,8 +282,8 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	receiveBot := container.NewVBox(
 		activeButtonHolder,
 		prog,
-		container.NewHBox(status),
 		container.NewHBox(
+			status,
 			layout.NewSpacer(),
 			saveAllButton,
 			deleteAllButton,
