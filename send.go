@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
@@ -44,50 +44,23 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	boxholder := container.NewVBox()
 	senderScroller := container.NewVScroll(boxholder)
 	fileentries := make(map[string]*fyne.Container)
+
+	if len(os.Args) > 0 {
+		for _, arg := range os.Args[1:] {
+			if err := addPath(arg, sendDir, fileentries, boxholder, sendEntry); err != nil {
+				log.Errorf(err.Error())
+			}
+		}
+	}
+
 	w.SetOnDropped(func(pos fyne.Position, uris []fyne.URI) {
 		if len(uris) == 0 {
 			return
 		}
 		for _, uri := range uris {
-			nfile := uri.Path()
-			fpath := filepath.Join(sendDir, filepath.Base(nfile))
-
-			_, err := os.Stat(fpath)
-			if err == nil {
-				log.Tracef("URI (%s), already in internal cache %s", nfile, fpath)
-				continue
+			if err := addPath(uri.Path(), sendDir, fileentries, boxholder, sendEntry); err != nil {
+				log.Errorf(err.Error())
 			}
-
-			err = CopyFile(nfile, fpath)
-			if err != nil {
-				log.Errorf("Unable to copy file, error: %s - %s\n", sendDir, err.Error())
-				continue
-			}
-			log.Tracef("URI (%s), copied to internal cache %s", nfile, fpath)
-
-			_, sterr := os.Stat(fpath)
-			if sterr != nil {
-				log.Errorf("Stat error: %s - %s\n", fpath, sterr.Error())
-				return
-			}
-
-			labelFile := widget.NewLabel(filepath.Base(nfile))
-			newentry := container.NewHBox(
-				labelFile,
-				layout.NewSpacer(),
-				widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
-					if !sendEntry.Disabled() {
-						if fe, ok := fileentries[fpath]; ok {
-							boxholder.Remove(fe)
-							os.Remove(fpath)
-							log.Tracef("Removed file from internal cache: %s", fpath)
-							delete(fileentries, fpath)
-						}
-					}
-				}),
-			)
-			fileentries[fpath] = newentry
-			boxholder.Add(newentry)
 		}
 		SelectIndex(w, 0)
 	})
@@ -99,35 +72,9 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 				return
 			}
 			if f != nil {
-				nfile, oerr := os.Create(filepath.Join(sendDir, f.URI().Name()))
-				if oerr != nil {
-					log.Errorf("Unable to copy file, error: %s - %s\n", sendDir, oerr.Error())
-					return
+				if err := addPath(f.URI().Path(), sendDir, fileentries, boxholder, sendEntry); err != nil {
+					log.Errorf(err.Error())
 				}
-				io.Copy(nfile, f)
-				nfile.Close()
-				fpath := nfile.Name()
-				log.Tracef("Android URI (%s), copied to internal cache %s", f.URI().String(), nfile.Name())
-
-				_, sterr := os.Stat(fpath)
-				if sterr != nil {
-					log.Errorf("Stat error: %s - %s\n", fpath, sterr.Error())
-					return
-				}
-				labelFile := widget.NewLabel(filepath.Base(fpath))
-				newentry := container.NewHBox(labelFile, layout.NewSpacer(), widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
-					// Can only add/remove if not currently attempting a send
-					if !sendEntry.Disabled() {
-						if fe, ok := fileentries[fpath]; ok {
-							boxholder.Remove(fe)
-							os.Remove(fpath)
-							log.Tracef("Removed file from internal cache: %s", fpath)
-							delete(fileentries, fpath)
-						}
-					}
-				}))
-				fileentries[fpath] = newentry
-				boxholder.Add(newentry)
 			}
 		}, w)
 	})
@@ -284,11 +231,13 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		}()
 		go func() {
 			<-cancelchan
-			donechan <- true
+			log.Warnf("Send cancelled. %s %v", sendDir, os.RemoveAll(sendDir))
+
 			fyne.Do(func() {
-				status.SetText(lp("Send cancelled."))
+				// status.SetText(lp("Send cancelled."))
+				// resetSender()
+				restart(a)
 			})
-			fyne.Do(resetSender)
 		}()
 	})
 
@@ -315,8 +264,7 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 
 // Big File Dialog
 func ShowFileOpen(callback func(reader fyne.URIReadCloser, err error), parent fyne.Window) {
-	switch runtime.GOOS {
-	case "ios", "android":
+	if mobile {
 		dialog.ShowFileOpen(callback, parent)
 		return
 	}
@@ -362,4 +310,60 @@ func SelectIndex(window fyne.Window, index int) {
 		tabs.SelectIndex(index)
 		tabs.Refresh()
 	}
+}
+
+func addPath(nfile, sendDir string,
+	fileentries map[string]*fyne.Container,
+	boxholder *fyne.Container,
+	sendEntry *widget.Entry) error {
+	fpath := filepath.Join(sendDir, filepath.Base(nfile))
+
+	fi, err := os.Stat(nfile)
+	if err != nil {
+		return fmt.Errorf("URI (%s) %s", nfile, err.Error())
+	} else if fi.IsDir() {
+		log.Tracef("URI (%s), is dir", nfile)
+		return nil
+	}
+
+	fi, err = os.Stat(fpath)
+	if err == nil {
+		log.Tracef("URI (%s), already in internal cache %s", nfile, fpath)
+		return nil
+	}
+
+	if err := CopyFile(nfile, fpath); err != nil {
+		return fmt.Errorf("Unable to copy file, error: %s - %s\n", sendDir, err.Error())
+	}
+	log.Tracef("URI (%s), copied to internal cache %s", nfile, fpath)
+
+	if _, sterr := os.Stat(fpath); sterr != nil {
+		return fmt.Errorf("Stat error: %s - %s\n", fpath, sterr.Error())
+	}
+
+	labelFile := widget.NewLabel(filepath.Base(nfile))
+	newentry := container.NewHBox(
+		labelFile,
+		layout.NewSpacer(),
+		widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
+			if !sendEntry.Disabled() {
+				if fe, ok := fileentries[fpath]; ok {
+					boxholder.Remove(fe)
+					os.Remove(fpath)
+					log.Tracef("Removed file from internal cache: %s", fpath)
+					delete(fileentries, fpath)
+				}
+			}
+		}),
+	)
+
+	fileentries[fpath] = newentry
+	boxholder.Add(newentry)
+	return nil
+}
+func restart(a fyne.App) {
+	if !mobile {
+		exec.Command(os.Args[0]).Start()
+	}
+	a.Quit()
 }

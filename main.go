@@ -8,6 +8,9 @@ package main
 import (
 	"bytes"
 	_ "embed"
+	"io"
+	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -28,6 +31,8 @@ import (
 
 //go:embed metadata/en-US/images/featureGraphic.png
 var textlogobytes []byte
+
+var mobile bool
 
 type logwriter struct {
 	buf        bytes.Buffer
@@ -82,7 +87,14 @@ func main() {
 	w := a.NewWindow("croc")
 
 	logbinding = binding.NewString()
-	log.SetOutput(&logoutput)
+
+	switch runtime.GOOS {
+	case "ios", "android":
+		log.SetOutput(&logoutput)
+		mobile = true
+	default:
+		log.SetOutput(io.MultiWriter(os.Stdout, &logoutput))
+	}
 
 	// Defaults
 	a.Preferences().SetString("lang", a.Preferences().StringWithFallback("lang", "en-US"))

@@ -5,8 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -29,7 +27,7 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	prog := widget.NewProgressBar()
 	prog.Hide()
 
-	topline := widget.NewLabel(lp(""))
+	topline := widget.NewLabel("")
 	recvEntry := widget.NewEntry()
 	recvEntry.SetPlaceHolder(lp("Enter code to download"))
 
@@ -117,7 +115,7 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		}
 		activeButtonHolder.Add(receiveButton)
 
-		topline.SetText(lp(""))
+		topline.SetText("")
 		recvEntry.Enable()
 	}
 
@@ -142,23 +140,23 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		}
 
 		receiver, err := croc.New(croc.Options{
-			IsSender:         false,
-			SharedSecret:     recvEntry.Text,
-			Debug:            crocDebugMode(),
-			RelayAddress:     a.Preferences().String("relay-address"),
-			RelayPorts:       strings.Split(a.Preferences().String("relay-ports"), ","),
-			RelayPassword:    a.Preferences().String("relay-password"),
-			Stdout:           false,
-			NoPrompt:         true,
-			DisableLocal:     a.Preferences().Bool("disable-local"),
-			NoMultiplexing:   a.Preferences().Bool("disable-multiplexing"),
-			OnlyLocal:        a.Preferences().Bool("force-local"),
-			NoCompress:       a.Preferences().Bool("disable-compression"),
-			Curve:            a.Preferences().String("pake-curve"),
-			HashAlgorithm:    a.Preferences().String("croc-hash"),
-			Overwrite:        true,
-			ZipFolder:        false,
-			GitIgnore:        false,
+			IsSender:     false,
+			SharedSecret: recvEntry.Text,
+			Debug:        crocDebugMode(),
+			RelayAddress: a.Preferences().String("relay-address"),
+			// RelayPorts:       strings.Split(a.Preferences().String("relay-ports"), ","),
+			RelayPassword:  a.Preferences().String("relay-password"),
+			Stdout:         false,
+			NoPrompt:       true,
+			DisableLocal:   a.Preferences().Bool("disable-local"),
+			NoMultiplexing: a.Preferences().Bool("disable-multiplexing"),
+			OnlyLocal:      a.Preferences().Bool("force-local"),
+			NoCompress:     a.Preferences().Bool("disable-compression"),
+			Curve:          a.Preferences().String("pake-curve"),
+			HashAlgorithm:  a.Preferences().String("croc-hash"),
+			Overwrite:      true,
+			// ZipFolder:        false,
+			// GitIgnore:        false,
 			MulticastAddress: a.Preferences().String("multicast-address"),
 		})
 		if err != nil {
@@ -248,12 +246,11 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 
 		go func() {
 			<-cancelchan
-			receiver.SuccessfulTransfer = true
-			donechan <- true
+			log.Warnf("Receive cancelled. %s %v", recvDir, os.RemoveAll(recvDir))
+
 			fyne.Do(func() {
-				status.SetText(lp("Receive cancelled."))
+				restart(a)
 			})
-			fyne.Do(resetReceiver)
 		}()
 	})
 
@@ -336,8 +333,7 @@ func ShowFileLocation(path string, parent fyne.Window) {
 
 // Big File Dialog
 func ShowFolderOpen(callback func(fyne.ListableURI, error), parent fyne.Window) {
-	switch runtime.GOOS {
-	case "ios", "android":
+	if mobile {
 		dialog.NewFolderOpen(callback, parent)
 		return
 	}
