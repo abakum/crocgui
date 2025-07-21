@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -183,9 +184,13 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		donechan := make(chan bool)
 		go func() {
 			ticker := time.NewTicker(time.Millisecond * 100)
+			defer ticker.Stop()
 			for {
 				select {
 				case <-ticker.C:
+					if receiver == nil {
+						return
+					}
 					if receiver.Step2FileInfoTransferred {
 						cnum := receiver.FilesToTransferCurrentNum
 						fi := receiver.FilesToTransfer[cnum]
@@ -197,7 +202,8 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 						})
 					}
 				case <-donechan:
-					ticker.Stop()
+					return
+				case <-cancelchan:
 					return
 				}
 			}
@@ -205,7 +211,17 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 
 		go func() {
 			fyne.Do(recvEntry.Disable)
-			ferr := receiver.Receive()
+			var ferr error
+			if EMULATE == 0 {
+				ferr = receiver.Receive()
+			} else {
+				log.Warnf("Receive\n")
+				time.Sleep(EMULATE)
+				defer func() {
+					time.Sleep(time.Millisecond * 10)
+					receiver = nil
+				}()
+			}
 			donechan <- true
 			if ferr != nil {
 				log.Errorf("Receive failed: %s\n", ferr)
@@ -245,13 +261,26 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		}()
 
 		go func() {
-			<-cancelchan
-			log.Warnf("Receive cancelled. %s %v", recvDir, os.RemoveAll(recvDir))
+			select {
+			case <-donechan:
+				return
+			case <-cancelchan:
+				lsSendDir := ls(recvDir)
+				log.Warnf("Receive cancelled. %s: %v\n", recvDir, lsSendDir)
+				Stop(receiver)
+				lsSendDir = ls(recvDir)
+				log.Warnf("%s: %v\n", recvDir, lsSendDir)
+				if len(lsSendDir) > 0 {
+					log.Warnf("Clear %s %v\n", recvDir, os.RemoveAll(recvDir))
+				}
 
-			fyne.Do(func() {
-				restart(a)
-			})
+				fyne.Do(func() {
+					resetReceiver()
+				})
+			}
 		}()
+		// // +2 go routines
+		log.Warnf("NumGoroutine %d", runtime.NumGoroutine())
 	})
 
 	cancelButton = widget.NewButtonWithIcon(lp("Cancel"), theme.CancelIcon(), func() {

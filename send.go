@@ -1,15 +1,20 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/schollz/logger"
+	"golang.org/x/time/rate"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -17,8 +22,11 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/schollz/croc/v10/src/comm"
 	"github.com/schollz/croc/v10/src/croc"
 	"github.com/schollz/croc/v10/src/utils"
+	"github.com/schollz/pake/v3"
+	"github.com/schollz/progressbar/v3"
 )
 
 func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
@@ -109,7 +117,7 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		for fpath, fe := range fileentries {
 			boxholder.Remove(fe)
 			os.Remove(fpath)
-			log.Tracef("Removed file from internal cache: %s", fpath)
+			log.Tracef("Removed file from internal cache: %s\n", fpath)
 			delete(fileentries, fpath)
 		}
 
@@ -125,7 +133,7 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 
 	sendButton = widget.NewButtonWithIcon(lp("Send"), theme.MailSendIcon(), func() {
 		if len(sendEntry.Text) < 6 {
-			log.Error("no receive code entered")
+			log.Error("no receive code entered\n")
 			dialog.ShowInformation(
 				lp("Send"),
 				lp("Enter code to download"),
@@ -136,7 +144,7 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 
 		// Only send if files selected
 		if len(fileentries) < 1 {
-			log.Error("no files selected")
+			log.Error("no files selected\n")
 			dialog.ShowInformation(
 				lp("Send"),
 				lp("Pick a file to send"),
@@ -172,7 +180,7 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			return
 		}
 		log.SetLevel(crocDebugLevel())
-		log.Trace("croc sender created")
+		log.Trace("croc sender created\n")
 
 		var filename string
 		status.SetText(fmt.Sprintf("%s: %s", lp("Receive Code"), sendEntry.Text))
@@ -188,9 +196,13 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		sendnames := make(map[string]int)
 		go func() {
 			ticker := time.NewTicker(time.Millisecond * 100)
+			defer ticker.Stop()
 			for {
 				select {
 				case <-ticker.C:
+					if sender == nil {
+						return
+					}
 					if sender.Step2FileInfoTransferred {
 						cnum := sender.FilesToTransferCurrentNum
 						fi := sender.FilesToTransfer[cnum]
@@ -203,7 +215,8 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 						})
 					}
 				case <-donechan:
-					ticker.Stop()
+					return
+				case <-cancelchan:
 					return
 				}
 			}
@@ -218,7 +231,16 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			if ferr != nil {
 				log.Errorf("file info failed: %s\n", ferr)
 			}
-			serr := sender.Send(fi, emptyfolders, numFolders)
+			var serr error
+			if EMULATE == 0 {
+				serr = sender.Send(fi, emptyfolders, numFolders)
+			} else {
+				log.Warnf("Send %v %v %v\n", fi, emptyfolders, numFolders)
+				time.Sleep(EMULATE)
+				defer func() {
+					sender = nil
+				}()
+			}
 			donechan <- true
 			if serr != nil {
 				log.Errorf("Send failed: %s\n", serr)
@@ -230,15 +252,31 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			fyne.Do(resetSender)
 		}()
 		go func() {
-			<-cancelchan
-			log.Warnf("Send cancelled. %s %v", sendDir, os.RemoveAll(sendDir))
-
-			fyne.Do(func() {
-				// status.SetText(lp("Send cancelled."))
-				// resetSender()
-				restart(a)
-			})
+			select {
+			case <-donechan:
+				if !mobile {
+					log.Tracef("A restart is better than leaving 12 goroutines leaking\n")
+					fyne.Do(func() {
+						restart(a)
+					})
+				}
+				return
+			case <-cancelchan:
+				lsSendDir := ls(sendDir)
+				log.Warnf("Send cancelled. %s: %v\n", sendDir, lsSendDir)
+				Stop(sender)
+				lsSendDir = ls(sendDir)
+				log.Warnf("%s: %v\n", sendDir, lsSendDir)
+				if len(lsSendDir) > 0 {
+					log.Warnf("Clear %s %v\n", sendDir, os.RemoveAll(sendDir))
+				}
+				fyne.Do(func() {
+					restart(a)
+				})
+			}
 		}()
+		// +12 go routines
+		log.Warnf("NumGoroutine %d\n", runtime.NumGoroutine())
 	})
 
 	cancelButton = widget.NewButtonWithIcon(lp("Cancel"), theme.CancelIcon(), func() {
@@ -322,20 +360,20 @@ func addPath(nfile, sendDir string,
 	if err != nil {
 		return fmt.Errorf("URI (%s) %s", nfile, err.Error())
 	} else if fi.IsDir() {
-		log.Tracef("URI (%s), is dir", nfile)
+		log.Tracef("URI (%s), is dir\n", nfile)
 		return nil
 	}
 
 	fi, err = os.Stat(fpath)
 	if err == nil {
-		log.Tracef("URI (%s), already in internal cache %s", nfile, fpath)
+		log.Tracef("URI (%s), already in internal cache %s\n", nfile, fpath)
 		return nil
 	}
 
 	if err := CopyFile(nfile, fpath); err != nil {
 		return fmt.Errorf("Unable to copy file, error: %s - %s\n", sendDir, err.Error())
 	}
-	log.Tracef("URI (%s), copied to internal cache %s", nfile, fpath)
+	log.Tracef("URI (%s), copied to internal cache %s\n", nfile, fpath)
 
 	if _, sterr := os.Stat(fpath); sterr != nil {
 		return fmt.Errorf("Stat error: %s - %s\n", fpath, sterr.Error())
@@ -350,7 +388,7 @@ func addPath(nfile, sendDir string,
 				if fe, ok := fileentries[fpath]; ok {
 					boxholder.Remove(fe)
 					os.Remove(fpath)
-					log.Tracef("Removed file from internal cache: %s", fpath)
+					log.Tracef("Removed file from internal cache: %s\n", fpath)
 					delete(fileentries, fpath)
 				}
 			}
@@ -361,9 +399,90 @@ func addPath(nfile, sendDir string,
 	boxholder.Add(newentry)
 	return nil
 }
+
+// For mobile Quit.
+// For desktop Restart.
 func restart(a fyne.App) {
 	if !mobile {
 		exec.Command(os.Args[0]).Start()
 	}
 	a.Quit()
+}
+
+type clientShadow struct {
+	Options                         croc.Options
+	Pake                            *pake.Pake
+	Key                             []byte
+	ExternalIP, ExternalIPConnected string
+
+	// steps involved in forming relationship
+	Step1ChannelSecured       bool
+	Step2FileInfoTransferred  bool
+	Step3RecipientRequestFile bool
+	Step4FileTransferred      bool
+	Step5CloseChannels        bool
+	SuccessfulTransfer        bool
+
+	// send / receive information of all files
+	FilesToTransfer           []croc.FileInfo
+	EmptyFoldersToTransfer    []croc.FileInfo
+	TotalNumberOfContents     int
+	TotalNumberFolders        int
+	FilesToTransferCurrentNum int
+	FilesHasFinished          map[int]struct{}
+	TotalFilesIgnored         int
+
+	// send / receive information of current file
+	CurrentFile            *os.File
+	CurrentFileChunkRanges []int64
+	CurrentFileChunks      []int64
+	CurrentFileIsClosed    bool
+	LastFolder             string
+
+	TotalSent              int64
+	TotalChunksTransferred int
+	chunkMap               map[uint64]struct{}
+	limiter                *rate.Limiter
+
+	// tcp connections
+	conn []*comm.Comm
+
+	bar             *progressbar.ProgressBar
+	longestFilename int
+	firstSend       bool
+
+	mutex                    *sync.Mutex
+	fread                    *os.File
+	numfinished              int
+	quit                     chan bool
+	finishedNum              int
+	numberOfTransferredFiles int
+}
+
+func Conns(client interface{}) ([]*comm.Comm, error) {
+	defer func() { recover() }()
+
+	v := reflect.ValueOf(client)
+	if v.Kind() != reflect.Ptr {
+		return nil, errors.New("not a pointer")
+	}
+
+	field := v.Elem().FieldByName("conn")
+	if !field.IsValid() {
+		return nil, errors.New("no such field")
+	}
+
+	return field.Interface().([]*comm.Comm), nil
+}
+
+func Stop(client interface{}) {
+	conns, err := Conns(client)
+	if err == nil {
+		if len(conns) > 0 {
+			conns[0].Close()
+			time.Sleep(time.Millisecond * 333)
+		}
+	} else {
+		log.Errorf("Stop: %v\n", err)
+	}
 }

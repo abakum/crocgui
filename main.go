@@ -1,8 +1,5 @@
-// sudo apt-get install gcc-mingw-w64-x86-64
-// go:generate bash -c "GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc go build -tags=opengl -ldflags \"-s -w\""
-// go generate
-//
-//go:generate bash -c "GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc go build -tags=opengl -ldflags \"-s -w -H=windowsgui\""
+//go:generate bash -c "GOFLAGS=-ldflags=-s go install"
+
 package main
 
 import (
@@ -41,6 +38,7 @@ type logwriter struct {
 }
 
 const LOG_LINES = 20
+const EMULATE = time.Second * 0
 
 func (lw *logwriter) Write(p []byte) (n int, err error) {
 	n, err = lw.buf.Write(p)
@@ -100,7 +98,7 @@ func main() {
 	a.Preferences().SetString("lang", a.Preferences().StringWithFallback("lang", "en-US"))
 	a.Preferences().SetString("relay-address", a.Preferences().StringWithFallback("relay-address", "croc.schollz.com:9009"))
 	a.Preferences().SetString("relay-password", a.Preferences().StringWithFallback("relay-password", "pass123"))
-	a.Preferences().SetString("relay-ports", a.Preferences().StringWithFallback("relay-ports", "9009,9010,9011,9012,9013"))
+	a.Preferences().SetString("relay-ports", a.Preferences().StringWithFallback("relay-ports", "9009,9010,9011,9012,9013,9014,9015,9016,9017"))
 	a.Preferences().SetBool("disable-local", a.Preferences().BoolWithFallback("disable-local", false))
 	a.Preferences().SetBool("force-local", a.Preferences().BoolWithFallback("force-local", false))
 	a.Preferences().SetBool("disable-multiplexing", a.Preferences().BoolWithFallback("disable-multiplexing", false))
@@ -132,4 +130,24 @@ func main() {
 	w.Resize(fyne.NewSize(800, 600))
 
 	w.ShowAndRun()
+}
+
+func ls(path string) (files []string) {
+
+	dir, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer dir.Close()
+
+	fileInfos, err := dir.Readdir(-1)
+	if err != nil {
+		return
+	}
+
+	for _, fileInfo := range fileInfos {
+		files = append(files, fileInfo.Name())
+	}
+
+	return
 }
