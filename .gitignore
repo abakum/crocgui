@@ -1,12 +1,9 @@
 # Binaries
-#*.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-*.apk
 /bin/
-/gobuild/
 
 # Test binary
 *.test

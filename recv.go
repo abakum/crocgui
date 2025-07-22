@@ -279,7 +279,7 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 				})
 			}
 		}()
-		// // +2 go routines
+		//  +2 go routines
 		log.Warnf("NumGoroutine %d", runtime.NumGoroutine())
 	})
 

@@ -79,10 +79,8 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 				log.Errorf("Open dialog error: %s", e.Error())
 				return
 			}
-			if f != nil {
-				if err := addPath(f.URI().Path(), sendDir, fileentries, boxholder, sendEntry); err != nil {
-					log.Errorf(err.Error())
-				}
+			if err := copyPath(f, sendDir, fileentries, boxholder, sendEntry); err != nil {
+				log.Errorf(err.Error())
 			}
 		}, w)
 	})
@@ -378,25 +376,7 @@ func addPath(nfile, sendDir string,
 	if _, sterr := os.Stat(fpath); sterr != nil {
 		return fmt.Errorf("Stat error: %s - %s\n", fpath, sterr.Error())
 	}
-
-	labelFile := widget.NewLabel(filepath.Base(nfile))
-	newentry := container.NewHBox(
-		labelFile,
-		layout.NewSpacer(),
-		widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
-			if !sendEntry.Disabled() {
-				if fe, ok := fileentries[fpath]; ok {
-					boxholder.Remove(fe)
-					os.Remove(fpath)
-					log.Tracef("Removed file from internal cache: %s\n", fpath)
-					delete(fileentries, fpath)
-				}
-			}
-		}),
-	)
-
-	fileentries[fpath] = newentry
-	boxholder.Add(newentry)
+	addEntry(fpath, fileentries, boxholder, sendEntry)
 	return nil
 }
 
@@ -485,4 +465,56 @@ func Stop(client interface{}) {
 	} else {
 		log.Errorf("Stop: %v\n", err)
 	}
+}
+
+func copyPath(source fyne.URIReadCloser, sendDir string,
+	fileentries map[string]*fyne.Container,
+	boxholder *fyne.Container,
+	sendEntry *widget.Entry) error {
+	if source == nil {
+		return fmt.Errorf("User cancel dialog\n")
+	}
+	defer source.Close()
+	src := source.URI().String()
+
+	dst := filepath.Join(sendDir, source.URI().Name())
+	destination, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("Unable to create file %s error: %s\n", dst, err.Error())
+	}
+	defer destination.Close()
+
+	io.Copy(destination, source)
+
+	log.Tracef("URI (%s), copied to internal cache %s", src, dst)
+
+	if _, sterr := os.Stat(dst); sterr != nil {
+		return fmt.Errorf("Stat file %s error: %s\n", dst, sterr.Error())
+	}
+	addEntry(dst, fileentries, boxholder, sendEntry)
+	return nil
+}
+
+func addEntry(fpath string,
+	fileentries map[string]*fyne.Container,
+	boxholder *fyne.Container,
+	sendEntry *widget.Entry) {
+	labelFile := widget.NewLabel(filepath.Base(fpath))
+	newentry := container.NewHBox(
+		labelFile,
+		layout.NewSpacer(),
+		widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
+			if !sendEntry.Disabled() {
+				if fe, ok := fileentries[fpath]; ok {
+					boxholder.Remove(fe)
+					os.Remove(fpath)
+					log.Tracef("Removed file from internal cache: %s\n", fpath)
+					delete(fileentries, fpath)
+				}
+			}
+		}),
+	)
+
+	fileentries[fpath] = newentry
+	boxholder.Add(newentry)
 }
