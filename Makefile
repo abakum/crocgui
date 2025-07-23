@@ -1,4 +1,4 @@
-.PHONY: all clean arm arm64 386 amd64 linux window windowsc darwin ios install
+.PHONY: all clean arm arm64 386 amd64 linux window windowsc darwin ios install darm
 
 all: android
 
@@ -33,9 +33,15 @@ windowsc: main.go send.go recv.go settings.go theme.go about.go AndroidManifest.
 
 darwin: main.go send.go recv.go settings.go theme.go about.go AndroidManifest.xml
 	fyne package -os darwin --release
+	cp -r crocgui.app /Applications/
 
 ios: main.go send.go recv.go settings.go theme.go about.go AndroidManifest.xml
 	fyne package -os ios --release
 
 install:
 	GOFLAGS=-ldflags=-s go install
+
+darm: 
+	#brew install glfw
+	GOFLAGS=-ldflags=-s CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build .
+	#cp crocgui /Applications/crocgui.app/Contents/MacOS/

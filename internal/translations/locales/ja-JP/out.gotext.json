@@ -17,16 +17,6 @@
             "translation": "コードを入力してダウンロード"
         },
         {
-            "id": "Debug log:",
-            "message": "Debug log:",
-            "translation": "デバッグログ:"
-        },
-        {
-            "id": "Export full log",
-            "message": "Export full log",
-            "translation": ""
-        },
-        {
             "id": "Saved all files to",
             "message": "Saved all files to",
             "translation": ""
@@ -42,11 +32,6 @@
             "translation": ""
         },
         {
-            "id": "Receive Code",
-            "message": "Receive Code",
-            "translation": "受信コード"
-        },
-        {
             "id": "Receiving file",
             "message": "Receiving file",
             "translation": "ファイルを受信中"
@@ -55,11 +40,6 @@
             "id": "Received",
             "message": "Received",
             "translation": "受信しました"
-        },
-        {
-            "id": "Receive cancelled.",
-            "message": "Receive cancelled.",
-            "translation": ""
         },
         {
             "id": "Cancel",
@@ -75,6 +55,11 @@
             "id": "Are you sure you want to delete all received files?",
             "message": "Are you sure you want to delete all received files?",
             "translation": ""
+        },
+        {
+            "id": "Receive Code",
+            "message": "Receive Code",
+            "translation": "受信コード"
         },
         {
             "id": "Receive",
@@ -102,11 +87,6 @@
             "translation": "ファイルを送信しました"
         },
         {
-            "id": "Send cancelled.",
-            "message": "Send cancelled.",
-            "translation": "送信はキャンセルされました"
-        },
-        {
             "id": "Send Code",
             "message": "Send Code",
             "translation": "受信コード"
@@ -120,6 +100,11 @@
             "id": "Show / Hide",
             "message": "Show / Hide",
             "translation": "表示 / 非表示"
+        },
+        {
+            "id": "Export full log",
+            "message": "Export full log",
+            "translation": ""
         },
         {
             "id": "Settings",

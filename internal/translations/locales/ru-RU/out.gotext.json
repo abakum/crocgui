@@ -17,19 +17,9 @@
             "translation": "Секрет должен быть больше 5 знаков"
         },
         {
-            "id": "Debug log:",
-            "message": "Debug log:",
-            "translation": "Журнал отладки:"
-        },
-        {
-            "id": "Export full log",
-            "message": "Export full log",
-            "translation": "Сохранить журнал"
-        },
-        {
             "id": "Saved all files to",
             "message": "Saved all files to",
-            "translation": ""
+            "translation": "Сохранил всё"
         },
         {
             "id": "Download",
@@ -42,11 +32,6 @@
             "translation": "Сохранить всё"
         },
         {
-            "id": "Receive Code",
-            "message": "Receive Code",
-            "translation": "Секрет"
-        },
-        {
             "id": "Receiving file",
             "message": "Receiving file",
             "translation": "Получаю"
@@ -55,11 +40,6 @@
             "id": "Received",
             "message": "Received",
             "translation": "Получил"
-        },
-        {
-            "id": "Receive cancelled.",
-            "message": "Receive cancelled.",
-            "translation": "Отмена получения."
         },
         {
             "id": "Cancel",
@@ -75,6 +55,11 @@
             "id": "Are you sure you want to delete all received files?",
             "message": "Are you sure you want to delete all received files?",
             "translation": "Вы уверены что хотите удалить все полученные файлы?"
+        },
+        {
+            "id": "Receive Code",
+            "message": "Receive Code",
+            "translation": "Секрет"
         },
         {
             "id": "Receive",
@@ -102,11 +87,6 @@
             "translation": "Послал"
         },
         {
-            "id": "Send cancelled.",
-            "message": "Send cancelled.",
-            "translation": "Отмена посылки."
-        },
-        {
             "id": "Send Code",
             "message": "Send Code",
             "translation": "Секрет"
@@ -114,12 +94,17 @@
         {
             "id": "Enable Debug Log",
             "message": "Enable Debug Log",
-            "translation": "Журналировть"
+            "translation": "Журналировать"
         },
         {
             "id": "Show / Hide",
             "message": "Show / Hide",
             "translation": "Вкл / Выкл"
+        },
+        {
+            "id": "Export full log",
+            "message": "Export full log",
+            "translation": "Сохранить журнал"
         },
         {
             "id": "Settings",
@@ -209,7 +194,7 @@
         {
             "id": "Disable Multiplexing",
             "message": "Disable Multiplexing",
-            "translation": "Без мультип."
+            "translation": "Без мультиплексирования"
         },
         {
             "id": "Disable Compression",
