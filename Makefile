@@ -43,5 +43,10 @@ install:
 
 darm: 
 	#brew install glfw
-	GOFLAGS=-ldflags=-s CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build .
-	#cp crocgui /Applications/crocgui.app/Contents/MacOS/
+	GOFLAGS=-ldflags=-s CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -o crocgui-darm .
+	#cp crocgui-darm /Applications/crocgui.app/Contents/MacOS/crocgui
+
+damd: 
+	#brew install glfw
+	GOFLAGS=-ldflags=-s CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o crocgui-damd .
+	#cp crocgui-damd /Applications/crocgui.app/Contents/MacOS/crocgui
