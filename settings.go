@@ -11,6 +11,8 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -135,6 +137,20 @@ func settingsTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		refreshWindow(a, w, 2)
 	})
 
+	exportButton := widget.NewButtonWithIcon(lp("Export full log"), theme.DocumentSaveIcon(), func() {
+		savedialog := dialog.NewFileSave(func(f fyne.URIWriteCloser, e error) {
+			if f != nil {
+				logoutput.buf.WriteTo(f)
+				f.Close()
+			}
+		}, w)
+		savedialog.SetFileName("crocdebuglog.txt")
+		savedialog.Resize(w.Canvas().Size())
+		savedialog.Show()
+	})
+
+	debugObjects = append(debugObjects, exportButton)
+
 	return container.NewTabItemWithIcon(lp("Settings"), theme.SettingsIcon(), container.NewVScroll(container.NewVBox(
 		widget.NewLabelWithStyle(lp("Appearance"), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		widget.NewForm(
@@ -168,8 +184,10 @@ func settingsTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		),
 		widget.NewSeparator(),
 		widget.NewLabelWithStyle(lp("Debug"), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewForm(
-			widget.NewFormItem("", debugCheck),
+		container.NewHBox(
+			debugCheck,
+			layout.NewSpacer(),
+			exportButton,
 		),
 	)))
 }

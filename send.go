@@ -30,7 +30,6 @@ import (
 )
 
 func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
-	status := widget.NewLabel("")
 	defer func() {
 		if r := recover(); r != nil {
 			log.Error(fmt.Sprint(r))
@@ -45,9 +44,8 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	copyCodeButton := widget.NewButtonWithIcon("", theme.ContentCopyIcon(), func() {
 		a.Clipboard().SetContent(sendEntry.Text)
 	})
-	copyCodeButton.Hide()
 
-	sendDir, _ := os.MkdirTemp("", "crocgui-send")
+	sendDir, _ = os.MkdirTemp("", "crocgui-send")
 
 	boxholder := container.NewVBox()
 	senderScroller := container.NewVScroll(boxholder)
@@ -74,31 +72,16 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	})
 
 	addFileButton := widget.NewButtonWithIcon("", theme.FileIcon(), func() {
-		ShowFileOpen(func(f fyne.URIReadCloser, e error) {
+		ShowFileOpen(func(source fyne.URIReadCloser, e error) {
 			if e != nil {
-				log.Errorf("Open dialog error: %s", e.Error())
+				log.Errorf("Open dialog error: %s", e)
 				return
 			}
-			if err := copyPath(f, sendDir, fileentries, boxholder, sendEntry); err != nil {
-				log.Errorf(err.Error())
+			if err := copyFromURC(source, sendDir, fileentries, boxholder, sendEntry); err != nil {
+				log.Errorf("%s\n", err)
 			}
 		}, w)
 	})
-
-	debugBox := container.NewHBox(widget.NewLabel(lp("Debug log:")),
-		layout.NewSpacer(),
-		widget.NewButtonWithIcon(lp("Export full log"), theme.DocumentSaveIcon(), func() {
-			savedialog := dialog.NewFileSave(func(f fyne.URIWriteCloser, e error) {
-				if f != nil {
-					logoutput.buf.WriteTo(f)
-					f.Close()
-				}
-			}, w)
-			savedialog.SetFileName("crocdebuglog.txt")
-			savedialog.Resize(w.Canvas().Size())
-			savedialog.Show()
-		}))
-	debugObjects = append(debugObjects, debugBox)
 
 	cancelchan := make(chan bool)
 	activeButtonHolder := container.NewVBox()
@@ -119,13 +102,11 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			delete(fileentries, fpath)
 		}
 
-		topline.SetText(lp("Pick a file to send"))
-		addFileButton.Show()
+		addFileButton.Enable()
 		if sendEntry.Text == randomCode {
 			randomCode = utils.GetRandomName()
 			sendEntry.SetText(randomCode)
 		}
-		copyCodeButton.Hide()
 		sendEntry.Enable()
 	}
 
@@ -151,7 +132,8 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			return
 		}
 
-		addFileButton.Hide()
+		// addFileButton.Hide()
+		addFileButton.Disable()
 		sender, err := croc.New(croc.Options{
 			IsSender:         true,
 			SharedSecret:     sendEntry.Text,
@@ -181,8 +163,6 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		log.Trace("croc sender created\n")
 
 		var filename string
-		status.SetText(fmt.Sprintf("%s: %s", lp("Receive Code"), sendEntry.Text))
-		copyCodeButton.Show()
 		prog.Show()
 
 		for _, obj := range activeButtonHolder.Objects {
@@ -195,6 +175,7 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		go func() {
 			ticker := time.NewTicker(time.Millisecond * 100)
 			defer ticker.Stop()
+			old := 0
 			for {
 				select {
 				case <-ticker.C:
@@ -203,12 +184,15 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 					}
 					if sender.Step2FileInfoTransferred {
 						cnum := sender.FilesToTransferCurrentNum
-						fi := sender.FilesToTransfer[cnum]
-						filename = filepath.Base(fi.Name)
-						sendnames[filename] = cnum
 						fyne.Do(func() {
-							topline.SetText(fmt.Sprintf("%s: %s(%d/%d)", lp("Sending file"), filename, cnum+1, len(sender.FilesToTransfer)))
-							prog.Max = float64(fi.Size)
+							if old < cnum+1 {
+								old = cnum + 1
+								fi := sender.FilesToTransfer[cnum]
+								filename = filepath.Base(fi.Name)
+								sendnames[filename] = cnum
+								topline.SetText(fmt.Sprintf("%s: %s(%d/%d)", lp("Sending file"), filename, cnum+1, len(sender.FilesToTransfer)))
+								prog.Max = float64(fi.Size)
+							}
 							prog.SetValue(float64(sender.TotalSent))
 						})
 					}
@@ -240,14 +224,15 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 				}()
 			}
 			donechan <- true
-			if serr != nil {
-				log.Errorf("Send failed: %s\n", serr)
-			} else {
-				fyne.Do(func() {
-					status.SetText(fmt.Sprintf("%s: %s", lp("Sent file"), filename))
-				})
-			}
-			fyne.Do(resetSender)
+			fyne.Do(func() {
+				if serr != nil {
+					log.Errorf("Send failed: %s\n", serr)
+					topline.SetText(serr.Error())
+				} else {
+					topline.SetText(fmt.Sprintf("%s: %s", lp("Sent file"), filename))
+				}
+				resetSender()
+			})
 		}()
 		go func() {
 			select {
@@ -260,14 +245,9 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 				}
 				return
 			case <-cancelchan:
-				lsSendDir := ls(sendDir)
-				log.Warnf("Send cancelled. %s: %v\n", sendDir, lsSendDir)
+				log.Warnf("Send cancelled. %s: %v\n", sendDir, ls(sendDir))
 				Stop(sender)
-				lsSendDir = ls(sendDir)
-				log.Warnf("%s: %v\n", sendDir, lsSendDir)
-				if len(lsSendDir) > 0 {
-					log.Warnf("Clear %s %v\n", sendDir, os.RemoveAll(sendDir))
-				}
+				clear(sendDir)
 				fyne.Do(func() {
 					restart(a)
 				})
@@ -275,6 +255,7 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		}()
 		// +12 go routines
 		log.Warnf("NumGoroutine %d\n", runtime.NumGoroutine())
+		a.Clipboard().SetContent(sendEntry.Text)
 	})
 
 	cancelButton = widget.NewButtonWithIcon(lp("Cancel"), theme.CancelIcon(), func() {
@@ -284,14 +265,14 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	activeButtonHolder.Add(sendButton)
 
 	sendTop := container.NewVBox(
-		container.NewHBox(topline, layout.NewSpacer(), addFileButton),
+		container.NewHBox(topline, layout.NewSpacer(), addFileButton, copyCodeButton),
 		widget.NewForm(&widget.FormItem{Text: lp("Send Code"), Widget: sendEntry}),
 	)
 	sendBot := container.NewVBox(
 		activeButtonHolder,
 		prog,
-		container.NewHBox(status, copyCodeButton),
-		debugBox,
+		// container.NewHBox(status, copyCodeButton),
+		// debugBox,
 	)
 
 	return container.NewTabItemWithIcon(lp("Send"), theme.MailSendIcon(),
@@ -467,12 +448,12 @@ func Stop(client interface{}) {
 	}
 }
 
-func copyPath(source fyne.URIReadCloser, sendDir string,
+func copyFromURC(source fyne.URIReadCloser, sendDir string,
 	fileentries map[string]*fyne.Container,
 	boxholder *fyne.Container,
 	sendEntry *widget.Entry) error {
 	if source == nil {
-		return fmt.Errorf("User cancel dialog\n")
+		return fmt.Errorf("User cancel dialog")
 	}
 	defer source.Close()
 	src := source.URI().String()
@@ -480,7 +461,7 @@ func copyPath(source fyne.URIReadCloser, sendDir string,
 	dst := filepath.Join(sendDir, source.URI().Name())
 	destination, err := os.Create(dst)
 	if err != nil {
-		return fmt.Errorf("Unable to create file %s error: %s\n", dst, err.Error())
+		return fmt.Errorf("Unable to create file %s error: %s", dst, err.Error())
 	}
 	defer destination.Close()
 
@@ -489,7 +470,7 @@ func copyPath(source fyne.URIReadCloser, sendDir string,
 	log.Tracef("URI (%s), copied to internal cache %s", src, dst)
 
 	if _, sterr := os.Stat(dst); sterr != nil {
-		return fmt.Errorf("Stat file %s error: %s\n", dst, sterr.Error())
+		return fmt.Errorf("Stat file %s error: %s", dst, sterr.Error())
 	}
 	addEntry(dst, fileentries, boxholder, sendEntry)
 	return nil
@@ -517,4 +498,11 @@ func addEntry(fpath string,
 
 	fileentries[fpath] = newentry
 	boxholder.Add(newentry)
+}
+func clear(path string) {
+	lsPath := ls(path)
+	log.Warnf("%s: %v\n", path, lsPath)
+	if len(lsPath) > 0 {
+		log.Tracef("Clear %s %v\n", path, os.RemoveAll(path))
+	}
 }

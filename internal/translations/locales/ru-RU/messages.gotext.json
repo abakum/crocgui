@@ -27,6 +27,11 @@
             "translation": "Сохранить журнал"
         },
         {
+            "id": "Saved all files to",
+            "message": "Saved all files to",
+            "translation": "Сохранил всё"
+        },
+        {
             "id": "Download",
             "message": "Download",
             "translation": "Беру"
@@ -109,7 +114,7 @@
         {
             "id": "Enable Debug Log",
             "message": "Enable Debug Log",
-            "translation": "Журналировть"
+            "translation": "Журналировать"
         },
         {
             "id": "Show / Hide",
@@ -204,7 +209,7 @@
         {
             "id": "Disable Multiplexing",
             "message": "Disable Multiplexing",
-            "translation": "Без мультип."
+            "translation": "Без мультиплексирования"
         },
         {
             "id": "Disable Compression",

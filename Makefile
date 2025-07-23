@@ -1,4 +1,4 @@
-.PHONY: all clean arm arm64 386 amd64 linux window windowsc darwin ios 
+.PHONY: all clean arm arm64 386 amd64 linux window windowsc darwin ios install
 
 all: android
 
@@ -36,3 +36,6 @@ darwin: main.go send.go recv.go settings.go theme.go about.go AndroidManifest.xm
 
 ios: main.go send.go recv.go settings.go theme.go about.go AndroidManifest.xml
 	fyne package -os ios --release
+
+install:
+	GOFLAGS=-ldflags=-s go install

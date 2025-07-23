@@ -19,7 +19,6 @@ import (
 )
 
 func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
-	status := widget.NewLabel("")
 	defer func() {
 		if r := recover(); r != nil {
 			log.Error(fmt.Sprint(r))
@@ -31,29 +30,17 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	topline := widget.NewLabel("")
 	recvEntry := widget.NewEntry()
 	recvEntry.SetPlaceHolder(lp("Enter code to download"))
+	copyCodeButton := widget.NewButtonWithIcon("", theme.ContentCopyIcon(), func() {
+		recvEntry.SetText(a.Clipboard().Content())
+	})
 
-	recvDir, _ := os.MkdirTemp("", "crocgui-recv")
+	recvDir, _ = os.MkdirTemp("", "crocgui-recv")
 
 	boxholder := container.NewVBox()
 	receiverScroller := container.NewVScroll(boxholder)
 	fileentries := make(map[string]*fyne.Container)
 
 	var lastSaveDir string
-
-	debugBox := container.NewHBox(widget.NewLabel(lp("Debug log:")),
-		layout.NewSpacer(),
-		widget.NewButtonWithIcon(lp("Export full log"), theme.DocumentSaveIcon(), func() {
-			savedialog := dialog.NewFileSave(func(f fyne.URIWriteCloser, e error) {
-				if f != nil {
-					logoutput.buf.WriteTo(f)
-					f.Close()
-				}
-			}, w)
-			savedialog.SetFileName("crocdebuglog.txt")
-			savedialog.Resize(w.Canvas().Size())
-			savedialog.Show()
-		}))
-	debugObjects = append(debugObjects, debugBox)
 
 	cancelchan := make(chan bool)
 	activeButtonHolder := container.NewVBox()
@@ -89,20 +76,21 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			prog.SetValue(0)
 
 			go func() {
-				for fpath := range fileentries {
-					dest := filepath.Join(lastSaveDir, filepath.Base(fpath))
-					err := copyFile(fpath, dest)
+				for src := range fileentries {
+					dest := filepath.Join(lastSaveDir, filepath.Base(src))
+					err := copyFile(src, dest)
 					if err != nil {
-						log.Errorf("Error saving file %s: %v", filepath.Base(fpath), err)
+						log.Errorf("Error saving file %s: %v", filepath.Base(src), err)
 						continue
 					}
+
 					fyne.Do(func() {
 						prog.SetValue(prog.Value + 1)
 					})
 				}
 				fyne.Do(func() {
 					prog.Hide()
-					status.SetText(fmt.Sprintf("%s: %s", lp("Saved all files to"), lastSaveDir))
+					topline.SetText(fmt.Sprintf("%s: %s", lp("Saved all files to"), lastSaveDir))
 				})
 			}()
 		}, w)
@@ -116,7 +104,6 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		}
 		activeButtonHolder.Add(receiveButton)
 
-		topline.SetText("")
 		recvEntry.Enable()
 	}
 
@@ -141,23 +128,20 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		}
 
 		receiver, err := croc.New(croc.Options{
-			IsSender:     false,
-			SharedSecret: recvEntry.Text,
-			Debug:        crocDebugMode(),
-			RelayAddress: a.Preferences().String("relay-address"),
-			// RelayPorts:       strings.Split(a.Preferences().String("relay-ports"), ","),
-			RelayPassword:  a.Preferences().String("relay-password"),
-			Stdout:         false,
-			NoPrompt:       true,
-			DisableLocal:   a.Preferences().Bool("disable-local"),
-			NoMultiplexing: a.Preferences().Bool("disable-multiplexing"),
-			OnlyLocal:      a.Preferences().Bool("force-local"),
-			NoCompress:     a.Preferences().Bool("disable-compression"),
-			Curve:          a.Preferences().String("pake-curve"),
-			HashAlgorithm:  a.Preferences().String("croc-hash"),
-			Overwrite:      true,
-			// ZipFolder:        false,
-			// GitIgnore:        false,
+			IsSender:         false,
+			SharedSecret:     recvEntry.Text,
+			Debug:            crocDebugMode(),
+			RelayAddress:     a.Preferences().String("relay-address"),
+			RelayPassword:    a.Preferences().String("relay-password"),
+			Stdout:           false,
+			NoPrompt:         true,
+			DisableLocal:     a.Preferences().Bool("disable-local"),
+			NoMultiplexing:   a.Preferences().Bool("disable-multiplexing"),
+			OnlyLocal:        a.Preferences().Bool("force-local"),
+			NoCompress:       a.Preferences().Bool("disable-compression"),
+			Curve:            a.Preferences().String("pake-curve"),
+			HashAlgorithm:    a.Preferences().String("croc-hash"),
+			Overwrite:        true,
 			MulticastAddress: a.Preferences().String("multicast-address"),
 		})
 		if err != nil {
@@ -173,7 +157,6 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		log.Trace("cd", recvDir)
 
 		var filename string
-		status.SetText(fmt.Sprintf("%s: %s", lp("Receive Code"), recvEntry.Text))
 		prog.Show()
 
 		for _, obj := range activeButtonHolder.Objects {
@@ -185,6 +168,7 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 		go func() {
 			ticker := time.NewTicker(time.Millisecond * 100)
 			defer ticker.Stop()
+			old := 0
 			for {
 				select {
 				case <-ticker.C:
@@ -193,11 +177,14 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 					}
 					if receiver.Step2FileInfoTransferred {
 						cnum := receiver.FilesToTransferCurrentNum
-						fi := receiver.FilesToTransfer[cnum]
-						filename = filepath.Base(fi.Name)
 						fyne.Do(func() {
-							topline.SetText(fmt.Sprintf("%s: %s(%d/%d)", lp("Receiving file"), filename, cnum+1, len(receiver.FilesToTransfer)))
-							prog.Max = float64(fi.Size)
+							if old < cnum+1 {
+								old = cnum + 1
+								fi := receiver.FilesToTransfer[cnum]
+								filename = filepath.Base(fi.Name)
+								topline.SetText(fmt.Sprintf("%s: %s(%d/%d)", lp("Receiving file"), filename, cnum+1, len(receiver.FilesToTransfer)))
+								prog.Max = float64(fi.Size)
+							}
 							prog.SetValue(float64(receiver.TotalSent))
 						})
 					}
@@ -211,9 +198,9 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 
 		go func() {
 			fyne.Do(recvEntry.Disable)
-			var ferr error
+			var rerr error
 			if EMULATE == 0 {
-				ferr = receiver.Receive()
+				rerr = receiver.Receive()
 			} else {
 				log.Warnf("Receive\n")
 				time.Sleep(EMULATE)
@@ -223,11 +210,14 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 				}()
 			}
 			donechan <- true
-			if ferr != nil {
-				log.Errorf("Receive failed: %s\n", ferr)
+			if rerr != nil {
+				log.Errorf("Receive failed: %s\n", rerr)
+				fyne.Do(func() {
+					topline.SetText(rerr.Error())
+				})
 			} else {
 				fyne.Do(func() {
-					status.SetText(fmt.Sprintf("%s: %s", lp("Received"), filename))
+					topline.SetText(fmt.Sprintf("%s: %s", lp("Received"), filename))
 
 					for _, fi := range receiver.FilesToTransfer {
 						fpath := filepath.Join(recvDir, filepath.Base(fi.Name))
@@ -265,14 +255,9 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 			case <-donechan:
 				return
 			case <-cancelchan:
-				lsSendDir := ls(recvDir)
-				log.Warnf("Receive cancelled. %s: %v\n", recvDir, lsSendDir)
+				log.Warnf("Receive cancelled. %s: %v\n", recvDir, ls(recvDir))
 				Stop(receiver)
-				lsSendDir = ls(recvDir)
-				log.Warnf("%s: %v\n", recvDir, lsSendDir)
-				if len(lsSendDir) > 0 {
-					log.Warnf("Clear %s %v\n", recvDir, os.RemoveAll(recvDir))
-				}
+				clear(recvDir)
 
 				fyne.Do(func() {
 					resetReceiver()
@@ -300,21 +285,22 @@ func recvTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	saveAllButton := widget.NewButtonWithIcon(lp("Save All"), theme.FolderOpenIcon(), func() {
 		saveAllFiles()
 	})
+	if mobile {
+		saveAllButton.Hide()
+	}
 
 	receiveTop := container.NewVBox(
-		container.NewHBox(topline, layout.NewSpacer()),
+		container.NewHBox(topline, layout.NewSpacer(), copyCodeButton),
 		widget.NewForm(&widget.FormItem{Text: lp("Receive Code"), Widget: recvEntry}),
 	)
 	receiveBot := container.NewVBox(
 		activeButtonHolder,
 		prog,
 		container.NewHBox(
-			status,
 			layout.NewSpacer(),
 			saveAllButton,
 			deleteAllButton,
 		),
-		debugBox,
 	)
 
 	return container.NewTabItemWithIcon(lp("Receive"), theme.DownloadIcon(),
@@ -338,24 +324,34 @@ func copyFile(src, dst string) error {
 	return err
 }
 
-func ShowFileLocation(path string, parent fyne.Window) {
-	savedialog := dialog.NewFileSave(func(f fyne.URIWriteCloser, e error) {
-		if f != nil {
-			src, err := os.Open(path)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-			defer src.Close()
+func copyToUWC(destination fyne.URIWriteCloser, src string) error {
+	if destination == nil {
+		return fmt.Errorf("User cancel dialog")
+	}
+	defer destination.Close()
+	dst := destination.URI().String()
 
-			_, err = io.Copy(f, src)
-			if err != nil {
-				log.Error(err)
-			}
-			f.Close()
+	source, err := os.Open(src)
+	if err != nil {
+		fmt.Errorf("Unable to open file %s error: %s", dst, err.Error())
+	}
+	defer source.Close()
+
+	_, err = io.Copy(destination, source)
+	if err != nil {
+		return fmt.Errorf("File %s copied to URI (%s) error: %s", src, dst, err.Error())
+	}
+	log.Tracef("File %s copied to URI (%s)", src, dst)
+	return nil
+}
+
+func ShowFileLocation(src string, parent fyne.Window) {
+	savedialog := dialog.NewFileSave(func(destination fyne.URIWriteCloser, e error) {
+		if err := copyToUWC(destination, src); err != nil {
+			log.Error("%s\n", err)
 		}
 	}, parent)
-	savedialog.SetFileName(filepath.Base(path))
+	savedialog.SetFileName(filepath.Base(src))
 	savedialog.Resize(parent.Canvas().Size())
 	savedialog.Show()
 }

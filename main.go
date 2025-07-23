@@ -29,7 +29,11 @@ import (
 //go:embed metadata/en-US/images/featureGraphic.png
 var textlogobytes []byte
 
-var mobile bool
+var (
+	mobile  bool
+	sendDir string
+	recvDir string
+)
 
 type logwriter struct {
 	buf        bytes.Buffer
@@ -37,8 +41,10 @@ type logwriter struct {
 	lastupdate time.Time
 }
 
-const LOG_LINES = 20
-const EMULATE = time.Second * 0
+const (
+	LOG_LINES = 20
+	EMULATE   = time.Second * 0
+)
 
 func (lw *logwriter) Write(p []byte) (n int, err error) {
 	n, err = lw.buf.Write(p)
@@ -83,6 +89,11 @@ func refreshWindow(a fyne.App, w fyne.Window, index int) {
 func main() {
 	a := app.NewWithID("com.github.howeyc.crocgui")
 	w := a.NewWindow("croc")
+	w.SetCloseIntercept(func() {
+		clear(sendDir)
+		clear(recvDir)
+		w.Close()
+	})
 
 	logbinding = binding.NewString()
 
@@ -133,7 +144,9 @@ func main() {
 }
 
 func ls(path string) (files []string) {
-
+	if path == "" {
+		return
+	}
 	dir, err := os.Open(path)
 	if err != nil {
 		return
