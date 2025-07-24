@@ -4,21 +4,35 @@
     xmlns:tools="http://schemas.android.com/tools"
 	package="com.github.howeyc.crocgui"
 	android:versionCode="40"
-	android:versionName="1.11.7">
+	android:versionName="1.11.8">
 
     <application android:label="Croc">
-	<activity android:name="org.golang.app.GoNativeActivity"
-		android:label="Croc"
-		android:configChanges="orientation|keyboardHidden|uiMode"
-		android:theme="@android:style/Theme">
-		<meta-data android:name="android.app.lib_name" android:value="croc" />
-		<intent-filter>
-			<action android:name="android.intent.action.MAIN" />
-			<category android:name="android.intent.category.LAUNCHER" />
-		</intent-filter>
-	</activity>
-	</application>
+        <activity android:name="org.golang.app.GoNativeActivity"
+            android:label="Croc"
+            android:configChanges="orientation|keyboardHidden|uiMode"
+            android:theme="@android:style/Theme"
+            android:exported="true">
+            
+            <meta-data android:name="android.app.lib_name" android:value="croc" />
+            
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:mimeType="*/*" />
+                <data android:scheme="file" />
+                <data android:scheme="content" />
+            </intent-filter>
+            
+        </activity>
+    </application>
 
-	<uses-permission android:name="android.permission.INTERNET" />
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 </manifest>

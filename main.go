@@ -89,6 +89,7 @@ func refreshWindow(a fyne.App, w fyne.Window, index int) {
 func main() {
 	a := app.NewWithID("com.github.howeyc.crocgui")
 	w := a.NewWindow("croc")
+
 	w.SetCloseIntercept(func() {
 		clear(sendDir)
 		clear(recvDir)

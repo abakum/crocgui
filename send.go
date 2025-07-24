@@ -51,25 +51,29 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	senderScroller := container.NewVScroll(boxholder)
 	fileentries := make(map[string]*fyne.Container)
 
-	if len(os.Args) > 0 {
-		for _, arg := range os.Args[1:] {
-			if err := addPath(arg, sendDir, fileentries, boxholder, sendEntry); err != nil {
-				log.Errorf(err.Error())
+	if mobile {
+		setupIntentHandler()
+	} else {
+		if len(os.Args) > 0 {
+			for _, arg := range os.Args[1:] {
+				if err := addPath(arg, sendDir, fileentries, boxholder, sendEntry); err != nil {
+					log.Errorf(err.Error())
+				}
 			}
 		}
-	}
 
-	w.SetOnDropped(func(pos fyne.Position, uris []fyne.URI) {
-		if len(uris) == 0 {
-			return
-		}
-		for _, uri := range uris {
-			if err := addPath(uri.Path(), sendDir, fileentries, boxholder, sendEntry); err != nil {
-				log.Errorf(err.Error())
+		w.SetOnDropped(func(pos fyne.Position, uris []fyne.URI) {
+			if len(uris) == 0 {
+				return
 			}
-		}
-		SelectIndex(w, 0)
-	})
+			for _, uri := range uris {
+				if err := addPath(uri.Path(), sendDir, fileentries, boxholder, sendEntry); err != nil {
+					log.Errorf(err.Error())
+				}
+			}
+			SelectIndex(w, 0)
+		})
+	}
 
 	addFileButton := widget.NewButtonWithIcon("", theme.FileIcon(), func() {
 		ShowFileOpen(func(source fyne.URIReadCloser, e error) {
