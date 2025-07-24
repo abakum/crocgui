@@ -2,7 +2,6 @@
 
 package main
 
-
 /*
 #include <jni.h>
 #include <stdlib.h>
@@ -35,6 +34,7 @@ static void processIntent(JNIEnv* env, jobject activity) {
 import "C"
 import (
 	"unsafe"
+
 	log "github.com/schollz/logger"
 
 	"fyne.io/fyne/v2/driver"
@@ -44,6 +44,7 @@ import (
 func receiveURIFromIntent(uri *C.char) {
 	goURI := C.GoString(uri)
 	log.Tracef("Received URI: %s", goURI)
+	uriFromIntent <- goURI
 }
 
 func setupIntentHandler() {

@@ -30,9 +30,14 @@ import (
 var textlogobytes []byte
 
 var (
-	mobile  bool
-	sendDir string
-	recvDir string
+	mobile        bool
+	sendDir       string
+	recvDir       string
+	done          = make(chan bool)
+	uriFromIntent = make(chan string, 100)
+
+	logoutput  logwriter
+	logbinding binding.String
 )
 
 type logwriter struct {
@@ -60,9 +65,6 @@ func (lw *logwriter) Write(p []byte) (n int, err error) {
 	}
 	return
 }
-
-var logoutput logwriter
-var logbinding binding.String
 
 func refreshWindow(a fyne.App, w fyne.Window, index int) {
 	textlogores := fyne.NewStaticResource("text-logo", textlogobytes)
@@ -93,6 +95,7 @@ func main() {
 	w.SetCloseIntercept(func() {
 		clear(sendDir)
 		clear(recvDir)
+		close(done)
 		w.Close()
 	})
 

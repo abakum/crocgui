@@ -8,6 +8,8 @@
 
     <application android:label="Croc">
         <activity android:name="org.golang.app.GoNativeActivity"
+            android:launchMode="singleTask"
+            android:alwaysRetainTaskState="true"
             android:label="Croc"
             android:configChanges="orientation|keyboardHidden|uiMode"
             android:theme="@android:style/Theme"
@@ -28,8 +30,39 @@
                 <data android:scheme="file" />
                 <data android:scheme="content" />
             </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
+                <data android:scheme="file" />
+                <data android:scheme="content" />
+            </intent-filter>
+            
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
+                <data android:scheme="file" />
+                <data android:scheme="content" />
+            </intent-filter>
             
         </activity>
+
+        <queries>
+            <intent>
+                <action android:name="android.intent.action.VIEW" />
+                <data android:mimeType="*/*" />
+            </intent>
+            <intent>
+                <action android:name="android.intent.action.SEND" />
+                <data android:mimeType="*/*" />
+            </intent>
+            <intent>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <data android:mimeType="*/*" />
+            </intent>
+        </queries>
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />

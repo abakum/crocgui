@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,6 +21,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/schollz/croc/v10/src/comm"
@@ -51,12 +53,58 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	senderScroller := container.NewVScroll(boxholder)
 	fileentries := make(map[string]*fyne.Container)
 
-	if mobile {
+	if runtime.GOOS == "android" {
 		setupIntentHandler()
+		go func() {
+			for {
+				select {
+				case <-done:
+					return
+				case uriString := <-uriFromIntent:
+					if uriString == "" {
+						continue
+					}
+					fyneURI, err := storage.ParseURI(uriString)
+					if err != nil {
+						log.Errorf("%s", err.Error())
+						continue
+					}
+					listable, err := storage.CanList(fyneURI)
+					if err != nil {
+						log.Errorf("%s", err.Error())
+						continue
+					}
+					if listable {
+						log.Tracef("URI (%s) is dir", uriString)
+						continue
+					}
+					can, err := storage.CanRead(fyneURI)
+					if err != nil {
+						log.Errorf("%s", err.Error())
+						continue
+					}
+					if !can {
+						log.Tracef("URI (%s) can't read", uriString)
+						continue
+					}
+					// if fyneURI.Scheme() == "file" {
+					// 	fyneURI = storage.NewFileURI(fyneURI.Path())
+					// }
+					source, err := storage.Reader(fyneURI)
+					if err != nil {
+						log.Errorf("%s", err.Error())
+						continue
+					}
+					if err := copyFromURC(source, sendDir, fileentries, boxholder, sendEntry); err != nil {
+						log.Errorf("%s\n", err)
+					}
+				}
+			}
+		}()
 	} else {
 		if len(os.Args) > 0 {
-			for _, arg := range os.Args[1:] {
-				if err := addPath(arg, sendDir, fileentries, boxholder, sendEntry); err != nil {
+			for _, src := range os.Args[1:] {
+				if err := addPath(src, sendDir, fileentries, boxholder, sendEntry); err != nil {
 					log.Errorf(err.Error())
 				}
 			}
@@ -333,35 +381,35 @@ func SelectIndex(window fyne.Window, index int) {
 	}
 }
 
-func addPath(nfile, sendDir string,
+func addPath(src, sendDir string,
 	fileentries map[string]*fyne.Container,
 	boxholder *fyne.Container,
 	sendEntry *widget.Entry) error {
-	fpath := filepath.Join(sendDir, filepath.Base(nfile))
+	dst := filepath.Join(sendDir, filepath.Base(src))
 
-	fi, err := os.Stat(nfile)
+	fi, err := os.Stat(src)
 	if err != nil {
-		return fmt.Errorf("URI (%s) %s", nfile, err.Error())
+		return fmt.Errorf("URI (%s) %s", src, err.Error())
 	} else if fi.IsDir() {
-		log.Tracef("URI (%s), is dir\n", nfile)
+		log.Tracef("URI (%s), is dir\n", src)
 		return nil
 	}
 
-	fi, err = os.Stat(fpath)
+	fi, err = os.Stat(dst)
 	if err == nil {
-		log.Tracef("URI (%s), already in internal cache %s\n", nfile, fpath)
+		log.Tracef("URI (%s), already in internal cache %s\n", src, dst)
 		return nil
 	}
 
-	if err := CopyFile(nfile, fpath); err != nil {
+	if err := CopyFile(src, dst); err != nil {
 		return fmt.Errorf("Unable to copy file, error: %s - %s\n", sendDir, err.Error())
 	}
-	log.Tracef("URI (%s), copied to internal cache %s\n", nfile, fpath)
+	log.Tracef("URI (%s), copied to internal cache %s\n", src, dst)
 
-	if _, sterr := os.Stat(fpath); sterr != nil {
-		return fmt.Errorf("Stat error: %s - %s\n", fpath, sterr.Error())
+	if _, sterr := os.Stat(dst); sterr != nil {
+		return fmt.Errorf("Stat error: %s - %s\n", dst, sterr.Error())
 	}
-	addEntry(fpath, fileentries, boxholder, sendEntry)
+	addEntry(dst, fileentries, boxholder, sendEntry)
 	return nil
 }
 
@@ -460,9 +508,13 @@ func copyFromURC(source fyne.URIReadCloser, sendDir string,
 		return fmt.Errorf("User cancel dialog")
 	}
 	defer source.Close()
-	src := source.URI().String()
+	// src := source.URI().String()
+	src, err := url.PathUnescape(source.URI().Path())
+	if err != nil {
+		return fmt.Errorf("Decode URI (%s): %v", source.URI().Path(), err)
+	}
 
-	dst := filepath.Join(sendDir, source.URI().Name())
+	dst := filepath.Join(sendDir, filepath.Base(src))
 	destination, err := os.Create(dst)
 	if err != nil {
 		return fmt.Errorf("Unable to create file %s error: %s", dst, err.Error())
