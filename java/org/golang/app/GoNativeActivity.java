@@ -1,108 +1,83 @@
 package org.golang.app;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import androidx.activity.OnBackPressedCallback;
 
 public class GoNativeActivity extends org.golang.app.GoNativeActivityBase {
+
+    static {
+        System.loadLibrary("croc");
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        handleIntent(getIntent());  // Обработка при холодном запуске
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                this::handleBackPressed
+            );
+        } else {
+            getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    handleBackPressed();
+                }
+            });
+        }
+
+        handleIntent(getIntent());
+        // if (!isTaskRoot()) { 
+        //     exitApplication(); 
+        // }
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
+        handleIntent(Intent);
         super.onNewIntent(intent);
-        setIntent(intent);  // Критически важно!
-        handleIntent(intent);  // Обработка при горячем запуске
+        setIntent(intent);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Двойная проверка для надежности
-        if (getIntent() != null && getIntent().getAction() != null) {
-            handleIntent(getIntent());
-        }
+        handleIntent(getIntent());
     }
 
     private void handleIntent(Intent intent) {
-        String action = intent.getAction();
-        if (Intent.ACTION_VIEW.equals(action) || 
-            Intent.ACTION_SEND.equals(action) ||
-            Intent.ACTION_SEND_MULTIPLE.equals(action)) {
-            processIntent(intent);  // Вызов нативного метода
+        if (intent == null) {
+            return;
         }
+        processIntent(intent);
+        // String action = intent.getAction();
+        // if (Intent.ACTION_VIEW.equals(action) || 
+        //     Intent.ACTION_SEND.equals(action) ||
+        //     Intent.ACTION_SEND_MULTIPLE.equals(action)) {
+        //     processIntent(intent);
+        // }
     }
 
-    static {
-        System.loadLibrary("croc");
+    private void handleBackPressed() {
+        exitApplication();
+    }
+
+    public void exitApplication() {
+        finishAffinity();
+        finishAndRemoveTask();
+        System.exit(0);
+    }
+
+    @Deprecated
+    @Override
+    public void onBackPressed() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            super.onBackPressed();
+            return;
+        }
+        handleBackPressed();
     }
 }
-
-// package org.golang.app;
-
-// import android.content.Intent;
-// import android.os.Bundle;
-// import android.net.Uri;
-// import java.util.ArrayList;
-
-// public class GoNativeActivity extends org.golang.app.GoNativeActivityBase {
-//     @Override
-//     protected void onCreate(Bundle savedInstanceState) {
-//         super.onCreate(savedInstanceState);
-//         handleIntent(getIntent());
-//     }
-
-//     @Override
-//     protected void onNewIntent(Intent intent) {
-//         super.onNewIntent(intent);
-//         handleIntent(intent);
-//     }
-
-//     private void handleIntent(Intent intent) {
-//         String action = intent.getAction();
-//         String type = intent.getType();
-
-//         if (Intent.ACTION_VIEW.equals(action)) {
-//             // Обработка VIEW (Открыть с помощью)
-//             Uri uri = intent.getData();
-//             if (uri != null) {
-//                 processViewUri(uri.toString());
-//             }
-//         } 
-//         else if (Intent.ACTION_SEND.equals(action) && type != null) {
-//             // Обработка SEND (Поделиться одним файлом)
-//             Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
-//             if (uri != null) {
-//                 processSendUri(uri.toString());
-//             } else {
-//                 String text = intent.getStringExtra(Intent.EXTRA_TEXT);
-//                 if (text != null) {
-//                     processText(text);
-//                 }
-//             }
-//         } 
-//         else if (Intent.ACTION_SEND_MULTIPLE.equals(action) && type != null) {
-//             // Обработка SEND_MULTIPLE (Несколько файлов)
-//             ArrayList<Uri> uris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
-//             if (uris != null) {
-//                 String[] uriStrings = new String[uris.size()];
-//                 for (int i = 0; i < uris.size(); i++) {
-//                     uriStrings[i] = uris.get(i).toString();
-//                 }
-//                 processMultipleUris(uriStrings);
-//             }
-//         }
-//     }
-
-//     // Нативные методы для разных типов контента
-//     public native void processViewUri(String uri);
-//     public native void processSendUri(String uri);
-//     public native void processText(String text);
-//     public native void processMultipleUris(String[] uris);
-    
-//     static {
-//         System.loadLibrary("croc");
-//     }
-// }

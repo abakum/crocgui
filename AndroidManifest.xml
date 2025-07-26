@@ -1,27 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest
-	xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-	package="com.github.howeyc.crocgui"
-	android:versionCode="40"
-	android:versionName="1.11.8">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.github.howeyc.crocgui"
+    android:versionCode="42"
+    android:versionName="1.11.8">
 
     <application android:label="Croc">
-        <activity android:name="org.golang.app.GoNativeActivity"
-            android:launchMode="singleTask"
-            android:alwaysRetainTaskState="true"
+
+        <activity
+            android:name="org.golang.app.GoNativeActivity"
             android:label="Croc"
-            android:configChanges="orientation|keyboardHidden|uiMode"
+            android:exported="true"
+            android:noHistory="true"
+            android:launchMode="singleTop"
             android:theme="@android:style/Theme"
-            android:exported="true">
-            
+            android:configChanges="orientation|keyboardHidden|uiMode">
+
             <meta-data android:name="android.app.lib_name" android:value="croc" />
-            
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
-            
+
+            <!-- Для "Открыть с помощью" -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -31,22 +33,18 @@
                 <data android:scheme="content" />
             </intent-filter>
 
+            <!-- Для "Поделиться" -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="*/*" />
-                <data android:scheme="file" />
-                <data android:scheme="content" />
             </intent-filter>
-            
+
             <intent-filter>
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="*/*" />
-                <data android:scheme="file" />
-                <data android:scheme="content" />
             </intent-filter>
-            
         </activity>
 
         <queries>
@@ -58,14 +56,11 @@
                 <action android:name="android.intent.action.SEND" />
                 <data android:mimeType="*/*" />
             </intent>
-            <intent>
-                <action android:name="android.intent.action.SEND_MULTIPLE" />
-                <data android:mimeType="*/*" />
-            </intent>
         </queries>
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
 </manifest>

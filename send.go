@@ -53,8 +53,8 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 	senderScroller := container.NewVScroll(boxholder)
 	fileentries := make(map[string]*fyne.Container)
 
-	if runtime.GOOS == "android" {
-		setupIntentHandler()
+	if android {
+		// setupIntentHandler()
 		go func() {
 			for {
 				select {
@@ -62,6 +62,13 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 					return
 				case uriString := <-uriFromIntent:
 					if uriString == "" {
+						log.Errorf("Received:")
+						continue
+					}
+					if _, err := url.Parse(uriString); err == nil {
+						log.Tracef("Received URI: %s", uriString)
+					} else {
+						log.Errorf("Received: %s", uriString)
 						continue
 					}
 					fyneURI, err := storage.ParseURI(uriString)
@@ -87,9 +94,6 @@ func sendTabItem(a fyne.App, w fyne.Window) *container.TabItem {
 						log.Tracef("URI (%s) can't read", uriString)
 						continue
 					}
-					// if fyneURI.Scheme() == "file" {
-					// 	fyneURI = storage.NewFileURI(fyneURI.Path())
-					// }
 					source, err := storage.Reader(fyneURI)
 					if err != nil {
 						log.Errorf("%s", err.Error())
@@ -419,7 +423,7 @@ func restart(a fyne.App) {
 	if !mobile {
 		exec.Command(os.Args[0]).Start()
 	}
-	a.Quit()
+	quit(a)
 }
 
 type clientShadow struct {

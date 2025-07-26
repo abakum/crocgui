@@ -31,6 +31,7 @@ var textlogobytes []byte
 
 var (
 	mobile        bool
+	android       bool
 	sendDir       string
 	recvDir       string
 	done          = make(chan bool)
@@ -97,14 +98,23 @@ func main() {
 		clear(recvDir)
 		close(done)
 		w.Close()
+		quit(a)
 	})
 
 	logbinding = binding.NewString()
 
 	switch runtime.GOOS {
-	case "ios", "android":
+	case "android":
+		android = true
+		setupIntentHandler()
+		fallthrough
+	case "ios":
 		log.SetOutput(&logoutput)
 		mobile = true
+		a.Lifecycle().SetOnEnteredForeground(func() { log.Trace("SetOnEnteredForeground") })
+		a.Lifecycle().SetOnExitedForeground(func() { log.Trace("SetOnExitedForeground") })
+		a.Lifecycle().SetOnStarted(func() { log.Trace("SetOnStarted") })
+		a.Lifecycle().SetOnStopped(func() { log.Trace("SetOnStopped") })
 	default:
 		log.SetOutput(io.MultiWriter(os.Stdout, &logoutput))
 	}
